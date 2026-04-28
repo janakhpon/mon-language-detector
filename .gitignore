@@ -205,3 +205,17 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Project Specifics
+AGENTS.md 
+
+# Data & Models
+data/*.txt
+data/*.bin
+!data/*.ftz
+
+# Datasets
+datasets/**/*.txt
+datasets/**/*.csv
+datasets/**/*.tsv
+datasets/**/*.parquet

@@ -1,0 +1,31 @@
+[project]
+name = "mon-language-detector"
+version = "0.1.0"
+description = "High-performance Mon/Burmese/English language detector with mixed-language categorization."
+readme = "README.md"
+authors = [
+    { name = "janakhpon", email = "jnovaxer@gmail.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "fasttext-wheel>=0.9.2",
+    "numpy<2.0",
+    "pandas>=2.3.3",
+    "pyarrow>=24.0.0",
+    "tqdm>=4.67.3",
+]
+
+[build-system]
+requires = ["uv_build>=0.8.10,<0.9.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+]
+
+[project.scripts]
+wrangle = "mon_language_detector.wrangle:main"
+pipeline = "mon_language_detector.pipeline:main"
+train = "mon_language_detector.train:main"
+preview = "mon_language_detector.preview:main"
