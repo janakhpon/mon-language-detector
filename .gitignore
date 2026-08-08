@@ -212,7 +212,7 @@ AGENTS.md
 # Data & Models
 data/*.txt
 data/*.bin
-!data/*.ftz
+!src/mon_language_detector/data/*.ftz
 
 # Datasets
 datasets/**/*.txt

@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 from typing import List, Optional, NamedTuple
 
-from .utils import get_logger, clean_and_normalize, PROJECT_ROOT
+from .utils import get_logger, clean_and_normalize, default_model_path
 
 logger = get_logger(__name__)
 
@@ -40,7 +40,7 @@ class LanguageDetector:
     _FASTTEXT_LABELS = {"__label__eng": "eng", "__label__mnw": "mnw", "__label__mya": "mya"}
 
     def __init__(self, model_path: Optional[Path] = None) -> None:
-        path = model_path or PROJECT_ROOT / "data" / "langid_mon_mya_eng_compressed.ftz"
+        path = Path(model_path) if model_path else default_model_path()
         if not path.exists():
             raise FileNotFoundError(f"Model not found: {path}")
         fasttext.FastText.eprint = lambda x: None
