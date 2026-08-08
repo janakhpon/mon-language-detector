@@ -8,15 +8,23 @@ class DummyModel:
         return (["__label__mnw"], [0.99])
 
 def get_test_detector():
+    # Both patches must be undone. `fasttext.load_model` used to be replaced and
+    # never restored, so every later test in the session got DummyModel instead
+    # of the real artifact -- which silently broke tests/test_detector_real_model.py
+    # when it was added: 18 passed alone, 2 failed in the full suite, because a
+    # stub that always answers 0.99 was standing in for the classifier.
     import fasttext
-    fasttext.load_model = lambda x: DummyModel()
     import pathlib
+
+    original_load = fasttext.load_model
     original_exists = pathlib.Path.exists
+    fasttext.load_model = lambda x: DummyModel()
     pathlib.Path.exists = lambda x: True
     try:
         return LanguageDetector(pathlib.Path("dummy.ftz"))
     finally:
         pathlib.Path.exists = original_exists
+        fasttext.load_model = original_load
 
 def test_basic_detection():
     d = get_test_detector()

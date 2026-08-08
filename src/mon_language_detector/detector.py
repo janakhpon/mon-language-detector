@@ -1,11 +1,32 @@
-import fasttext
 import re
+import unicodedata
 from pathlib import Path
-from typing import List, Optional, NamedTuple
+from typing import List, NamedTuple, Optional
 
-from .utils import get_logger, clean_and_normalize, default_model_path
+import fasttext
+
+from .utils import clean_and_normalize, default_model_path, get_logger
 
 logger = get_logger(__name__)
+
+
+def _is_script_bearing(c: str) -> bool:
+    """Letters and combining marks only.
+
+    Myanmar text is dense with medials and vowel signs (U+103B MEDIAL YA and
+    friends), which are category Mn, so filtering on `str.isalpha()` alone would
+    discard most of the Myanmar signal. Spaces, digits, punctuation and symbols
+    carry no language signal in any of the three languages and are excluded.
+    """
+    return unicodedata.category(c)[0] in ("L", "M")
+
+
+def _is_latin(c: str) -> bool:
+    return "A" <= c <= "Z" or "a" <= c <= "z" or "À" <= c <= "ɏ"
+
+
+def _is_myanmar(c: str) -> bool:
+    return "က" <= c <= "႟" or "ꩠ" <= c <= "ꩿ"
 
 
 class Detection(NamedTuple):
@@ -73,15 +94,30 @@ class LanguageDetector:
         if len(cleaned) < 3:
             return Detection("unknown", 0.0, False)
 
+        # Script ratios, over script-bearing characters only.
+        #
+        # This previously counted U+0000-U+024F across the whole string as
+        # "Latin", a range that includes the space, every ASCII digit and every
+        # ASCII punctuation mark. So "1234567890" and "!!! ,,, ???" each scored
+        # latin=1.0 and came back as English, confidence 1.0, reliable=True, and
+        # Mon text whose only non-Myanmar content was a year like 1990 came back
+        # code-switched. For the stated use of corpus filtering, that silently
+        # mislabels every numeric table row and citation block in a scrape.
+        scripted = [c for c in cleaned if _is_script_bearing(c)]
+        if not scripted:
+            # Digits, punctuation or symbols only. There is no language here.
+            return Detection("unknown", 0.0, False)
+
         # Neural prediction
         (raw_label,), (conf,) = self.model.predict(cleaned, k=1)
         lang = self._FASTTEXT_LABELS.get(raw_label, "unknown")
-        conf = float(conf)
+        # fastText posteriors can exceed 1.0 by a float epsilon. Clamp it, so a
+        # field documented as a confidence always reads as one.
+        conf = min(float(conf), 1.0)
 
-        # Script-ratio analysis
-        total = len(cleaned)
-        latin   = sum(1 for c in cleaned if "\u0000" <= c <= "\u024F") / total
-        myanmar = sum(1 for c in cleaned if "\u1000" <= c <= "\u109F" or "\uAA60" <= c <= "\uAA7F") / total
+        total = len(scripted)
+        latin = sum(1 for c in scripted if _is_latin(c)) / total
+        myanmar = sum(1 for c in scripted if _is_myanmar(c)) / total
 
         # Label synthesis
         label = lang
@@ -89,7 +125,10 @@ class LanguageDetector:
             # Mixed script
             label = "mnw-eng" if (has_mon or lang == "mnw") else "mya-eng"
         elif latin > 0.85:
-            label, conf = "eng", latin
+            # Keep the model's posterior. Assigning the script ratio here made
+            # `confidence` a probability on some paths and a ratio on others,
+            # while the reliability guard below thresholds both against 0.80.
+            label = "eng"
         elif has_mon and lang != "mnw":
             # Correct model miss via hard signal
             label, conf = "mnw", max(conf, 0.85)
