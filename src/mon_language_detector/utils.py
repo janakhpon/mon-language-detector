@@ -9,6 +9,22 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 MODEL_FILENAME = "langid_mon_mya_eng_compressed.ftz"
 
+# The shortest text the detector is willing to vouch for, and the shortest line
+# the training pipeline keeps. One constant, because they are one decision.
+#
+# They were two: training kept `len > 10`, so 11 characters and up, while the
+# reliability guard accepted `len >= 10`. Text of exactly ten characters was
+# therefore marked reliable at a length the model had never been trained on.
+# Serving now matches training rather than the reverse -- the model's evidence
+# is what sets the floor.
+MIN_RELIABLE_LEN = 11
+
+# Myanmar script alone does not separate Mon from Burmese: the two share almost
+# every character, and Mon-exclusive characters are what break the tie. Below
+# this length a Myanmar-only string with no Mon-exclusive character carries too
+# little signal to call, whatever the posterior says.
+MIN_UNAMBIGUOUS_MYANMAR_LEN = 20
+
 
 def default_model_path() -> Path:
     """Path to the bundled fastText model.

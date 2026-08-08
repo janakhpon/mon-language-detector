@@ -3,7 +3,7 @@ import random
 from pathlib import Path
 from typing import List
 
-from .utils import PROJECT_ROOT, clean_and_normalize, get_logger
+from .utils import MIN_RELIABLE_LEN, PROJECT_ROOT, clean_and_normalize, get_logger
 
 logger = get_logger(__name__)
 
@@ -11,14 +11,19 @@ VALID_FRACTION = 0.1
 DEFAULT_SEED = 20260808
 
 
-def _extract_lines(path: Path, min_len: int = 10) -> List[str]:
-    """Read and normalize lines from a single file."""
+def _extract_lines(path: Path, min_len: int = MIN_RELIABLE_LEN) -> List[str]:
+    """Read and normalize lines from a single file.
+
+    `min_len` is inclusive, and shares its default with the detector's
+    reliability guard. Keeping a line here is what entitles the detector to
+    vouch for a text of that length.
+    """
     lines = []
     try:
         with open(path, encoding="utf-8") as f:
             for line in f:
                 cl = clean_and_normalize(line)
-                if len(cl) > min_len:
+                if len(cl) >= min_len:
                     lines.append(cl)
     except Exception as e:
         logger.error(f"Error reading {path}: {e}")

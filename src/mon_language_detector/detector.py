@@ -5,7 +5,13 @@ from typing import List, NamedTuple, Optional
 
 import fasttext
 
-from .utils import clean_and_normalize, default_model_path, get_logger
+from .utils import (
+    MIN_RELIABLE_LEN,
+    MIN_UNAMBIGUOUS_MYANMAR_LEN,
+    clean_and_normalize,
+    default_model_path,
+    get_logger,
+)
 
 logger = get_logger(__name__)
 
@@ -30,7 +36,8 @@ def _is_myanmar(c: str) -> bool:
 
 
 class Detection(NamedTuple):
-    label: str        # mnw | mya | eng | mnw-eng | mya-eng | mnw-mya | mixed | unknown
+    # No path produces "mixed"; it was listed here and never emitted.
+    label: str        # mnw | mya | eng | mnw-eng | mya-eng | mnw-mya | unknown
     confidence: float
     reliable: bool
 
@@ -133,13 +140,15 @@ class LanguageDetector:
             # Correct model miss via hard signal
             label, conf = "mnw", max(conf, 0.85)
 
-        # Reliability guard
-        # Short Myanmar-only text with no Mon-exclusive chars is inherently ambiguous.
-        # Threshold is 20 chars (not 15) to avoid incorrectly flagging everyday Burmese phrases.
-        reliable = conf > 0.80 and len(cleaned) >= 10
+        # Reliability guard. Both lengths are named in utils.py, and
+        # MIN_RELIABLE_LEN is the same constant the training pipeline filters on
+        # -- the detector does not vouch for a length the model never saw.
+        reliable = conf > 0.80 and len(cleaned) >= MIN_RELIABLE_LEN
         if has_mon:
+            # A Mon-exclusive character is a hard signal, not a posterior, so it
+            # stands on its own at any length.
             reliable = True
-        elif label in ("mnw", "mya") and len(cleaned) < 20 and not has_mon:
+        elif label in ("mnw", "mya") and len(cleaned) < MIN_UNAMBIGUOUS_MYANMAR_LEN:
             reliable = False
 
         return Detection(label, conf, reliable)
