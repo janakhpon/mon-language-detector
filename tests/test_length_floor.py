@@ -57,22 +57,37 @@ def test_the_detector_does_not_vouch_below_the_training_floor(tmp_path):
     assert detector.predict(at_floor_text).reliable is True
 
 
-def test_the_two_ends_read_one_constant():
-    """The default is the constant itself, not a copy that happens to match.
+def test_the_two_floors_agree_when_probed(tmp_path):
+    """Measure both floors instead of reading either one.
 
-    A literal in either place is how the two drifted the first time.
+    The tests above build their strings from MIN_RELIABLE_LEN, so they pin the
+    comparison but not the number: set the constant wrong and they still pass
+    together. This one asks each side, in its own terms, for the shortest input
+    it accepts, and compares the two answers. It is the test that actually
+    describes the defect -- a gap between the two -- rather than one side of it.
+
+    "s" repeated is deliberate: DummyModel answers eng for anything containing
+    T, h, i or s, and an all-Latin string stays clear of the separate and
+    stricter Myanmar guard.
     """
+    detector = get_test_detector()
+    probe = range(1, 40)
+
+    guard_floor = min(n for n in probe if detector.predict("s" * n).reliable)
+    filter_floor = min(n for n in probe if ("s" * n) in _extract_lines(_write(tmp_path, "s" * n)))
+
+    assert guard_floor == filter_floor, (
+        f"the detector vouches from {guard_floor} characters but the pipeline trains "
+        f"from {filter_floor}. Whichever moved, the other has to follow."
+    )
+    assert guard_floor == MIN_RELIABLE_LEN
+
+
+def test_the_pipeline_default_is_the_shared_constant():
+    """A copy that happens to match is how the two drifted the first time."""
     import inspect
 
-    from mon_language_detector import detector as detector_module
-
-    assert (
-        inspect.signature(_extract_lines).parameters["min_len"].default == MIN_RELIABLE_LEN
-    ), "the pipeline default has been unpinned from the shared constant"
-
-    source = inspect.getsource(detector_module.LanguageDetector.predict)
-    assert "MIN_RELIABLE_LEN" in source, "the reliability guard no longer reads the constant"
-    assert "len(cleaned) >= 10" not in source, "the literal floor is back"
+    assert inspect.signature(_extract_lines).parameters["min_len"].default == MIN_RELIABLE_LEN
 
 
 def test_a_mon_exclusive_character_is_reliable_below_the_floor():
