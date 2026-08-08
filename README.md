@@ -23,9 +23,27 @@ Identification tool for Mon (mnw), Burmese (mya), and English (eng) text. Optimi
 
 ## Performance Data
 
-- **Precision@1**: 0.925 (Quantized Model)
+- **Precision@1**: withdrawn pending a retrain — see below
 - **Model Size**: 7.4 MB (`.ftz`)
-- **Throughput**: ~2000 samples/sec (single thread)
+- **Throughput**: not currently measured
+
+### Why the accuracy figure was withdrawn
+
+The published 0.925 was measured on a validation split that shared rows with
+training. `pipeline.py` upsampled short languages by repeating lines and only
+then shuffled and split 90/10, so every repeated line landed on both sides. Mon
+was the language most likely to fall short of its target, so it was the most
+duplicated and the worst affected. The number was therefore measured partly on
+memorised training rows, and its true value is unknown.
+
+The pipeline is fixed as of 2026-08-08: lines are deduplicated, each language is
+split before any upsampling, upsampling applies to the train side only, synthetic
+code-switched samples are derived per split, and `build_dataset` raises if any
+sample appears in both files. Every shuffle is seeded, so a run is reproducible.
+
+The shipped `.ftz` predates that fix. A retrain on a clean split is needed before
+any accuracy figure goes back in this README. Throughput was never measured and
+is removed rather than repeated.
 
 ## CLI Reference
 
