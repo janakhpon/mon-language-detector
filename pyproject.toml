@@ -27,9 +27,11 @@ dev = [
 ]
 
 [project.scripts]
+datasets = "mon_language_detector.datasets:main"
 wrangle = "mon_language_detector.wrangle:main"
 pipeline = "mon_language_detector.pipeline:main"
 train = "mon_language_detector.train:main"
+evaluate = "mon_language_detector.evaluate:main"
 preview = "mon_language_detector.preview:main"
 
 # The linters were run ad hoc and declared nowhere, so the debt was invisible:

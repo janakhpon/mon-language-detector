@@ -9,7 +9,55 @@ from .utils import PROJECT_ROOT, get_logger
 logger = get_logger(__name__)
 
 
-def validate_data_files(train_file: Path, valid_file: Path):
+def _report(model: object, valid_file: Path, tag: str) -> dict[str, float]:
+    """Aggregate AND per-class metrics, plus the confusion that matters.
+
+    A single Precision@1 over an imbalanced validation set is the number that got
+    this repository into trouble once already. The split here is roughly
+    45k Mon / 4.7k Burmese / 26k English by natural size, so an aggregate is
+    dominated by the two large classes and a collapsed Burmese class would move
+    it by a couple of points at most.
+
+    Mon and Burmese share the script and are the only pair this model can
+    plausibly confuse, so that confusion is printed as a count rather than left
+    to be inferred from recall.
+    """
+    n, precision, recall = model.test(str(valid_file))  # type: ignore[attr-defined]
+    logger.info(f"--- {tag} ---")
+    logger.info(f"  validation examples : {n:,}")
+    logger.info(f"  Precision@1         : {precision:.4f}")
+    logger.info(f"  Recall@1            : {recall:.4f}")
+
+    per_label = model.test_label(str(valid_file))  # type: ignore[attr-defined]
+    logger.info(f"  {'class':<12}{'precision':>11}{'recall':>9}{'f1':>9}")
+    for label in sorted(per_label):
+        m = per_label[label]
+        logger.info(
+            f"  {label.replace('__label__', ''):<12}"
+            f"{m['precision']:>11.4f}{m['recall']:>9.4f}{m['f1score']:>9.4f}"
+        )
+
+    confusion: dict[tuple[str, str], int] = {}
+    with open(valid_file, encoding="utf-8") as f:
+        for line in f:
+            gold, _, text = line.partition(" ")
+            if not text.strip():
+                continue
+            (pred,), _ = model.predict(text.strip(), k=1)  # type: ignore[attr-defined]
+            if pred != gold:
+                key = (gold.replace("__label__", ""), pred.replace("__label__", ""))
+                confusion[key] = confusion.get(key, 0) + 1
+    if confusion:
+        logger.info("  misclassifications (gold -> predicted):")
+        for (gold, pred), count in sorted(confusion.items(), key=lambda kv: -kv[1]):
+            logger.info(f"    {gold:>4} -> {pred:<4} {count:>7,}")
+    else:
+        logger.info("  no misclassification on the validation split")
+
+    return {"n": float(n), "precision": float(precision), "recall": float(recall)}
+
+
+def validate_data_files(train_file: Path, valid_file: Path) -> None:
     """Ensure training data exists before starting."""
     if not train_file.exists() or not valid_file.exists():
         raise FileNotFoundError(
@@ -65,14 +113,7 @@ def train_model(  # noqa: PLR0913 — eleven CLI flags, each one a hyperparamete
     logger.info(f"Training completed successfully in {duration:.2f} seconds.")
 
     logger.info("Evaluating on validation set...")
-    result = model.test(str(valid_file))
-
-    logger.info(f"Validation Examples: {result[0]}")
-    logger.info(f"Precision@1: {result[1]:.4f}")
-    logger.info(f"Recall@1: {result[2]:.4f}")
-
-    labels = model.get_labels()
-    logger.info(f"Detected classes: {labels}")
+    _report(model, valid_file, "full model")
 
     model_output.parent.mkdir(parents=True, exist_ok=True)
     try:
@@ -88,10 +129,12 @@ def train_model(  # noqa: PLR0913 — eleven CLI flags, each one a hyperparamete
         model.quantize(input=str(train_file), qnorm=True, retrain=True, cutoff=100000)
         model.save_model(str(quantized_output))
 
-        q_result = model.test(str(valid_file))
         q_size_mb = quantized_output.stat().st_size / (1024 * 1024)
         logger.info(f"Compressed model saved to {quantized_output} ({q_size_mb:.2f} MB)")
-        logger.info(f"Quantized Precision@1: {q_result[1]:.4f}")
+        # The quantized artifact is the one that ships, so it gets the same
+        # report as the full model rather than a bare Precision@1. Quantization
+        # is lossy and the loss is not spread evenly across classes.
+        _report(model, valid_file, "quantized model — THIS IS WHAT SHIPS")
     except Exception as e:
         logger.error(f"Quantization failed: {e}")
         # Not raising, since full model succeeded

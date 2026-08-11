@@ -1,8 +1,16 @@
 import argparse
 import random
+from collections.abc import Callable
 from pathlib import Path
 
-from .utils import MIN_RELIABLE_LEN, PROJECT_ROOT, clean_and_normalize, get_logger
+from .detector import _is_latin, _is_myanmar, _is_script_bearing
+from .utils import (
+    MIN_RELIABLE_LEN,
+    MIN_SCRIPT_DOMINANCE,
+    PROJECT_ROOT,
+    clean_and_normalize,
+    get_logger,
+)
 
 logger = get_logger(__name__)
 
@@ -29,7 +37,22 @@ def _extract_lines(path: Path, min_len: int = MIN_RELIABLE_LEN) -> list[str]:
     return lines
 
 
-def _collect(dirs: list[Path], target: int) -> list[str]:
+def _script_dominant(text: str, is_own_script: Callable[[str], bool]) -> bool:
+    """True if the class's own script holds `MIN_SCRIPT_DOMINANCE` of the letters.
+
+    Digits, punctuation and whitespace are excluded, because "၁၉၉၀" and "1990"
+    say nothing about language and counting them once made every numeric table
+    row score as English (audit C1).
+    """
+    scripted = [c for c in text if _is_script_bearing(c)]
+    if not scripted:
+        return False
+    return sum(1 for c in scripted if is_own_script(c)) / len(scripted) >= MIN_SCRIPT_DOMINANCE
+
+
+def _collect(
+    dirs: list[Path], target: int, is_own_script: Callable[[str], bool] | None = None
+) -> list[str]:
     """Collect DEDUPLICATED lines from all .txt files in the given directories.
 
     Shuffles files before reading to avoid source-order bias.
@@ -42,6 +65,14 @@ def _collect(dirs: list[Path], target: int) -> list[str]:
     most duplicated and the worst affected.
 
     Upsampling now happens after the split, on the train side only.
+
+    `is_own_script` gates class membership on script dominance. A corpus
+    directory says where a line came from, not what language it is: 6.51% of the
+    Mon-labelled validation lines were over 85% Latin — Mon Wikipedia reference
+    rows like "Heinz, L.C. (6 March 1962)." — so the class taught English -> mnw
+    and then scored the detector wrong for disagreeing. Measured on the first
+    clean run, that was 993 of 1,204 Mon errors. Pass `None` only where the
+    directory really is the label.
     """
     files: list[Path] = []
     for d in dirs:
@@ -52,10 +83,17 @@ def _collect(dirs: list[Path], target: int) -> list[str]:
 
     random.shuffle(files)
     lines: list[str] = []
+    dropped = 0
     for f in files:
-        lines.extend(_extract_lines(f))
+        for line in _extract_lines(f):
+            if is_own_script is not None and not _script_dominant(line, is_own_script):
+                dropped += 1
+                continue
+            lines.append(line)
         if len(lines) >= target * 2:  # collect a 2x buffer before trimming
             break
+    if dropped:
+        logger.info(f"  dropped {dropped:,} lines whose majority script is not the class's")
 
     random.shuffle(lines)
 
@@ -146,9 +184,9 @@ def build_dataset(  # noqa: PLR0913 — nine CLI flags, each one a separate deci
 
     # Split each language before upsampling, so no repeated line can appear on
     # both sides. _collect returns deduplicated lines for the same reason.
-    eng_all = _collect(eng_dirs, target_eng)
-    mya_all = _collect(mya_dirs, target_mya)
-    mon_all = _collect(mon_dirs, target_mon)
+    eng_all = _collect(eng_dirs, target_eng, _is_latin)
+    mya_all = _collect(mya_dirs, target_mya, _is_myanmar)
+    mon_all = _collect(mon_dirs, target_mon, _is_myanmar)
     logger.info(
         f"unique  English: {len(eng_all):,}  Burmese: {len(mya_all):,}  Mon: {len(mon_all):,}"
     )

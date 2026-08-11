@@ -25,6 +25,25 @@ MIN_RELIABLE_LEN = 11
 # little signal to call, whatever the posterior says.
 MIN_UNAMBIGUOUS_MYANMAR_LEN = 20
 
+# The share of a line's script-bearing characters that must belong to a class's
+# own script before that line may train or evaluate the class.
+#
+# One constant, because it is one decision made in two places: `detector.py`
+# labels a text `eng` when its Latin share exceeds this, and the pipeline now
+# refuses to put a line in a single-language class unless that class's script
+# clears the same bar. Without the second half the first is punished for being
+# right — the Mon class held Mon-Wikipedia reference lines like
+# "Heinz, L.C. (6 March 1962)." labelled `mnw`, so the detector called them
+# English and the evaluation scored it wrong.
+#
+# Measured 2026-08-11 on the deduplicated corpus: at 0.85 the gate keeps 89.6% of
+# Mon lines, 99.2% of Burmese and 99.6% of English. The 10.4% it drops from Mon
+# are lines where Myanmar is not the majority script; they are mixed or
+# mislabelled, and a single-language class is the wrong home for both. Code
+# switching is served by the `mnw-eng` / `mya-eng` labels and by the synthesised
+# mixed samples, not by mislabelled corpus rows.
+MIN_SCRIPT_DOMINANCE = 0.85
+
 
 def default_model_path() -> Path:
     """Path to the bundled fastText model.

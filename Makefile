@@ -1,4 +1,4 @@
-.PHONY: install check fix test lint format pipeline train
+.PHONY: install check fix test lint format datasets pipeline train evaluate
 
 install:
 	uv sync --group dev
@@ -29,9 +29,21 @@ lint:
 format:
 	uv run ruff format .
 
+# Corpus -> datasets/ -> labelled split -> model. Run in order.
+#
+# `datasets` is a SELECTION, not a copy: mon_OCR's corpus is bucketed for OCR,
+# where the label is the text, and four of its Mon directories are English or
+# Burmese by content. `uv run datasets --explain` prints what is dropped and why.
+datasets:
+	uv run datasets
+
 # Corpus -> labelled train/valid split. Raises if a sample lands in both.
 pipeline:
 	uv run python -m mon_language_detector.pipeline
 
 train:
 	uv run python -m mon_language_detector.train
+
+# The number the README cites. Scores the DETECTOR, not the raw model.
+evaluate:
+	uv run python -m mon_language_detector.evaluate
