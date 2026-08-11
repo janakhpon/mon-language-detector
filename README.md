@@ -45,6 +45,31 @@ The shipped `.ftz` predates that fix. A retrain on a clean split is needed befor
 any accuracy figure goes back in this README. Throughput was never measured and
 is removed rather than repeated.
 
+### What the detector cannot do
+
+**It answers a three-way question.** Mon, Burmese and English are the only
+classes; fastText has no way to say "none of these", so anything else must land
+on one of the three.
+
+The Myanmar script is shared with Shan, Khamti, Aiton, Karen and Palaung, and a
+Mon corpus scrape collects them. Measured on the shipped model, Shan came back
+`mnw` at confidence 1.0000 with `reliable=True`. Since 2026-08-11 text carrying a
+character exclusive to one of those languages, and no Mon-exclusive character, is
+returned as `unknown` with `basis="other-myanmar-script"` instead — see
+`OTHER_MYANMAR_LANGUAGE_CODEPOINTS`. Measured cost on the corpora: the guard
+fires on 0.051% of 306,564 Mon lines and 0% of 9,065 Burmese lines.
+
+**That guard is characters, not comprehension.** Shan written without any of
+those 124 codepoints is still labelled Mon, and a fourth class would need Shan
+training data nobody has. Filter on `reliable` and check `basis`.
+
+### Where the reasoning lives
+
+| Document | What it answers |
+|---|---|
+| [docs/AUDIT-2026-08-08.md](docs/AUDIT-2026-08-08.md) | What was found, with the evidence, and which commit closed each finding |
+| [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md) | What is left, in order, and what is deliberately not being done |
+
 ## CLI Reference
 
 ### Data Wrangling
@@ -87,5 +112,3 @@ The `.ftz` format is compatible with the standard fastText mobile libraries.
 ### 3. Web (WASM)
 Deploy to the browser using `fasttext-wasm` or similar wrappers. The 7.4MB footprint allows for efficient edge-side detection without server round-trips.
 
----
-*Built for technical robustness and linguistic accuracy.*
