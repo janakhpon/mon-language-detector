@@ -34,8 +34,12 @@ format:
 # `datasets` is a SELECTION, not a copy: mon_OCR's corpus is bucketed for OCR,
 # where the label is the text, and four of its Mon directories are English or
 # Burmese by content. `uv run datasets --explain` prints what is dropped and why.
+# CORPUS_ROOT has no default: the corpus is not in this repository, and a
+# published package should not assume a path on the author's machine.
+CORPUS_ROOT ?=
 datasets:
-	uv run datasets
+	@test -n "$(CORPUS_ROOT)" || { echo "make datasets needs a corpus: make datasets CORPUS_ROOT=/path/to/corpus"; echo "  layout: one directory per source, each holding .txt files"; echo "  see:    uv run datasets --explain"; exit 1; }
+	uv run datasets --corpus-root $(CORPUS_ROOT)
 
 # Corpus -> labelled train/valid split. Raises if a sample lands in both.
 pipeline:

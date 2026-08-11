@@ -56,23 +56,15 @@ signal, out-of-domain guard and reliability flag. And the model was trained on
 training side is repeated about 3.6×, while Mon and English are near their
 natural size.
 
-### Why the previous accuracy figure was withdrawn
+### How the split is kept honest
 
-The published 0.925 was measured on a validation split that shared rows with
-training. `pipeline.py` upsampled short languages by repeating lines and only
-then shuffled and split 90/10, so every repeated line landed on both sides. Mon
-was the language most likely to fall short of its target, so it was the most
-duplicated and the worst affected. The number was therefore measured partly on
-memorised training rows, and its true value is unknown.
+Lines are deduplicated, each language is split before any upsampling, upsampling
+applies to the train side only, and synthetic code-switched samples are derived
+per split. Every shuffle is seeded. `build_dataset` raises if a sample reaches
+both files.
 
-The pipeline is fixed as of 2026-08-08: lines are deduplicated, each language is
-split before any upsampling, upsampling applies to the train side only, synthetic
-code-switched samples are derived per split, and `build_dataset` raises if any
-sample appears in both files. Every shuffle is seeded, so a run is reproducible.
-
-**Closed 2026-08-11.** The model above is trained on the fixed pipeline, and the
-figures come from `make evaluate` on the split it never saw. Throughput is still
-not measured, and is still absent rather than guessed.
+An earlier release published 0.925 measured on a split that shared rows with
+training. That number is withdrawn and is not comparable with the one above.
 
 ### What the detector cannot do
 
@@ -105,12 +97,17 @@ Run in this order. `make check` gates all of it.
 
 ### 1. Corpus selection
 ```bash
-uv run datasets --explain    # what is included, what is dropped, and why
-uv run datasets              # symlink the selected corpora into datasets/
+uv run datasets --explain                      # what is kept, what is dropped, why
+uv run datasets --corpus-root /path/to/corpus  # symlink the selection into datasets/
 ```
-A corpus directory records where a line came from, not what language it is.
-Four directories that a sibling project buckets as Mon are English or Burmese by
-content, and this step is where they are excluded.
+The corpus is not in this repository. Point `--corpus-root` at one laid out as
+a directory per source, each holding `.txt` files with one line per sentence.
+
+A directory records where a line came from, not what language it is. The corpus
+this model was trained on is organised for OCR, where the label is the text on
+the image, and four of its Mon directories are English or Burmese by content.
+This step is where they are excluded; the tables in `datasets.py` are that
+corpus's names and your own will differ.
 
 ### 2. Dataset pipeline
 ```bash

@@ -46,16 +46,17 @@ def _unicode_name(cp: int) -> str:
 # Myanmar blocks — a range list cannot be checked that way, which is how the Shan
 # and Karen entries survived.
 #
-# Verified against real corpora (`mon_OCR/data/raw/corpus`, 2026-08-11):
+# Verified against the Mon and Burmese corpora this project trains on, 2026-08-11:
 # 4,792,030 Mon characters and 552,394 Burmese. **Every one of these ten occurs
 # in Mon and none occurs in Burmese**, from 360 (U+1028) to 95,104 (U+105A).
 # At line level over 306,564 Mon lines, the corrected set fires on 39.99% against
 # the old 36.62% — 10,395 lines that carried a hard signal nothing could see.
 #
-# Deliberately NOT here: U+103A ASAT and U+1035 VOWEL SIGN E ABOVE. `mon_OCR`
-# lists both under `MON_REQUIRED_CODEPOINTS`, which answers a different question
-# — whether a *font* can draw Mon — and U+103A appears throughout Burmese.
-# Exclusivity and capability are not the same set.
+# Deliberately NOT here: U+103A ASAT and U+1035 VOWEL SIGN E ABOVE. Both appear
+# on lists of "codepoints a Mon font must be able to draw", which answers a
+# different question — whether a *font* can render Mon — and U+103A appears
+# throughout Burmese. Exclusivity and capability are not the same set, and
+# borrowing one list for the other is how a Burmese letter gets called Mon.
 MON_EXCLUSIVE_CODEPOINTS: frozenset[int] = frozenset(
     {
         0x1028,  # MYANMAR LETTER MON E                    (Burmese uses U+1027)

@@ -1,14 +1,18 @@
 """Select which corpus directories may train which class.
 
-`mon_OCR/data/raw/corpus` is bucketed, audited and passes its own purity gate —
-but it is bucketed **for OCR**, where the label is the text on the image. For
-language identification the label is the *language*, and those are not the same
-question. A Mon-English dictionary line is Mon data for a renderer and half
-English for a classifier.
+Expects a corpus root holding one directory per source, each with `.txt` files
+of one line per sentence. The source corpus this project uses is organised for
+**OCR**, where a line's label is the text on the image. For language
+identification the label is the *language*, and those are not the same question:
+a Mon-English dictionary line is Mon data for a renderer and half English for a
+classifier.
 
-Taking that corpus's Mon bucket wholesale would put roughly 219,000 lines of
-English and Burmese into the Mon class. This module is the difference, stated
-once, with the measurement behind each decision.
+Taking its Mon grouping wholesale would put roughly 219,000 lines of English and
+Burmese into the Mon class. This module is the difference, stated once, with the
+measurement behind each decision. `--explain` prints it.
+
+Point `--corpus-root` at your own corpus and adjust the two tables below; the
+directory names are this corpus's, the reasoning is general.
 
 All figures measured 2026-08-11 on lines surviving `clean_and_normalize` at
 `MIN_RELIABLE_LEN`, over script-bearing characters only.
@@ -40,7 +44,7 @@ EXCLUDED_FILES: dict[str, str] = {
     "custom_shard_001.txt": "43.2% Latin over 101,185 lines; bilingual, not Mon prose",
 }
 
-# Directories mon_OCR buckets as Mon that must NOT train the Mon class here.
+# Directories grouped as Mon upstream that must NOT train the Mon class here.
 # Kept as data rather than as a comment so `--explain` can print it and the
 # decision is reviewable without reading the source.
 EXCLUDED_DIRS: dict[str, str] = {
@@ -60,13 +64,13 @@ EXCLUDED_DIRS: dict[str, str] = {
     ),
     "proper_nouns": (
         "676 lines at 33.6% Latin — country names, one per line, in Mon, Burmese "
-        "and English alike ('Afghanistan'). mon_OCR buckets them Mon on purpose, "
-        "because the mixed-script spelling is what its renderer wants."
+        "and English alike ('Afghanistan'). Grouped as Mon upstream on purpose, "
+        "because the mixed-script spelling is what a renderer wants."
     ),
     "mon_generated": (
-        "795 machine-authored lines (Gemini), admitted to mon_OCR as a documented "
-        "exception to its own 'not machine-generated' bar. A detector trained on "
-        "them learns a model's idea of Mon."
+        "795 machine-authored lines (Gemini), admitted upstream as a documented "
+        "exception to a 'not machine-generated' ingestion bar. A detector trained "
+        "on them learns a model's idea of Mon."
     ),
 }
 
@@ -109,8 +113,8 @@ def link_datasets(corpus_root: Path, out_root: Path, *, copy: bool = False) -> d
             source = corpus_root / name
             if not source.is_dir():
                 raise FileNotFoundError(
-                    f"{source} does not exist. Pass --corpus-root pointing at a "
-                    f"checkout of mon_OCR's data/raw/corpus."
+                    f"{source} does not exist under {corpus_root}. Pass --corpus-root "
+                    f"pointing at a corpus laid out as one directory per source."
                 )
             for path in sorted(source.rglob("*.txt")):
                 if path.name in EXCLUDED_FILES:
@@ -135,11 +139,14 @@ def main() -> None:
     p = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
+    # Required, with no default. It used to default to a path under the author's
+    # home directory, which is not a corpus location for anyone else and is not a
+    # thing a published package should assume.
     p.add_argument(
         "--corpus-root",
         type=Path,
-        default=Path.home() / "Documents/STUDY/mon_OCR/data/raw/corpus",
-        help="mon_OCR's audited, bucketed corpus root",
+        required=True,
+        help="corpus root: one directory per source, each holding .txt files",
     )
     p.add_argument("--out-root", type=Path, default=PROJECT_ROOT / "datasets")
     p.add_argument("--copy", action="store_true", help="copy instead of symlinking")
