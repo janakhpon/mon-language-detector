@@ -28,7 +28,7 @@ Retrained 2026-08-11 on a clean split. Reproduce with `make evaluate`.
 | | |
 |---|---|
 | **Detector accuracy** | **0.9565** over 34,988 held-out lines |
-| **Accuracy where `reliable`** | **0.9888** over 29,102 lines (83.2% of the split) |
+| **Accuracy where `reliable`** | **0.9980** over 27,085 lines (77.4% of the split) |
 | **Model size** | 7.72 MB (`.ftz`), quantized |
 | **Throughput** | still not measured |
 
@@ -44,10 +44,16 @@ Per class, and the aggregate does not speak for all three:
 keeps `reliable` rows and drops the rest, so accuracy over the whole split
 describes a workload nobody runs.
 
-**Every remaining error is Mon against Burmese** — 1,367 `mnw` lines labelled
-`mya` and 151 the other way. There is no `eng` confusion left in either
-direction. The two languages share the script, and only about half of Mon lines
-carry a Mon-exclusive character for the hard signal to find.
+**Every remaining error is Mon against Burmese**, and it is a length problem.
+Over the 19,988 Myanmar-script lines of the split, 97.7% of the errors sit in
+lines of 40 characters or fewer; above 40 the rate is under 1%. Of the 8,855
+lines carrying a Mon-exclusive character, none was misclassified, against 13.66%
+of those without one. `MIN_UNAMBIGUOUS_MYANMAR_LEN` is set at 30 on that
+evidence: it costs 5.8 points of coverage against the previous 20 and cuts the
+error rate among vouched-for lines by 5.6 times.
+
+That threshold was chosen on the same split it is scored on, because there is no
+separate test set. The 0.9980 is optimistic by an unknown margin.
 
 Two numbers that are *not* this one: `make train` reports fastText's
 Precision@1 (0.9561), which is the classifier without the detector's hard

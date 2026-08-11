@@ -79,21 +79,48 @@ reads it before trusting `reliable`.
 
 ---
 
-## 3. Mon against Burmese, which is where the error now lives
+## 3. Closed: Mon against Burmese was a length problem
 
-Every miss in the 2026-08-11 evaluation is that pair: **1,367 `mnw` lines
-labelled `mya` and 151 the other way**, with no `eng` confusion in either
-direction. The two languages share the script, and only about half of Mon lines
-carry a Mon-exclusive character for the hard signal to find.
+Measured 2026-08-11 over the 19,988 Myanmar-script lines of the held-out split.
+§3.2 was listed ahead of §3.1 on the guess that measuring first would say whether
+more Burmese data was the answer. It did, and the answer is not yet.
 
-| | Work | Why it might help |
-|---|---|---|
-| 3.1 | **More Burmese prose.** 46,407 unique lines against Mon's 450,986, and 34,089 of those are dictionary headwords rather than sentences | The class is both the smallest and the least prose-like. Its training side is repeated 3.6× where Mon's is repeated 1.1× |
-| 3.2 | Measure whether the errors concentrate in short lines | The reliable-only accuracy is 0.9888 against 0.9565 overall, so most of them already fall outside what the detector vouches for. If the rest are short, the length floor is the lever |
-| 3.3 | A Mon/Burmese-only second stage, run when the script is Myanmar | Only worth building if 3.1 and 3.2 do not close it. A second model is a second thing to keep true |
+| length | n | error rate | share of all errors |
+|---|---:|---:|---:|
+| 11-20 | 9,154 | 12.33% | 74.2% |
+| 21-40 | 4,657 | 7.67% | 23.5% |
+| 41-80 | 2,395 | 0.63% | 1.0% |
+| 81+ | 3,782 | 0.53% | 1.3% |
 
-Do 3.2 before 3.1: it is an afternoon with the existing split and it says
-whether more data is the answer.
+**97.7% of the errors are in lines of 40 characters or fewer.** The other half of
+the same measurement is sharper: of 8,855 lines carrying a Mon-exclusive
+character, **zero** were misclassified, against 13.66% of the 11,133 without one.
+The hard signal is perfect on this split and the gap is everything it cannot
+reach.
+
+`MIN_UNAMBIGUOUS_MYANMAR_LEN` moved 20 to 30 on that evidence. The trade:
+
+| threshold | coverage | accuracy where reliable |
+|---|---:|---:|
+| 20 (was) | 83.2% | 0.9888 |
+| **30** | **77.4%** | **0.9980** |
+| 40 | 75.5% | 0.9990 |
+| 60 | 73.2% | 0.9992 |
+
+5.8 points of coverage for a 5.6x cut in the error rate. The next step costs 1.9
+points for a tenth, so 30 is the knee rather than a preference.
+
+**Caveat, stated because nothing else will state it:** the threshold was selected
+on the same split it is scored on. There is no held-out test set — that is still
+open from AUDIT-2026-08-08, Medium — so 0.9980 is optimistic by an unknown
+margin. One threshold off a smooth monotone curve is the mildest form of that
+bias, not the absence of it.
+
+**What this leaves for 3.1 (more Burmese prose).** Still worth doing, and no
+longer the first lever. It would help the 11-40 band, which is where a corpus
+filter meets short lines it has to judge; it would not have been diagnosable
+before this measurement, and collecting data to fix a length problem would have
+been the expensive way to find that out.
 
 ---
 
