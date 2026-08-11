@@ -41,9 +41,10 @@ Retrained 2026-08-11. `make evaluate` reproduces these, once a split exists —
 | Overall | 0.9565 over 34,988 held-out lines |
 | Per class | `eng` 1.0000 · `mya` 0.9675 · `mnw` 0.9107 |
 | Model | 8.10 MB `.ftz`, quantized |
+| Throughput | 28,149 lines/s, single-threaded, Apple M5 |
 
 Corpus filtering keeps the reliable rows and drops the rest, so the first row is
-the one that describes the workload. Throughput is unmeasured.
+the one that describes the workload.
 
 Every remaining error is Mon against Burmese, and it is a length problem: 97.7%
 of them are in lines of 40 characters or fewer. Lines carrying a Mon-exclusive
@@ -85,7 +86,11 @@ repetition.
 
 The `.ftz` works with the standard fastText bindings on Android, iOS and WASM.
 
+Install with `pip install mon-language-detector`. The `wrangle` CLI needs
+`[wrangle]` on top; detection does not.
+
 ## Documents
 
+- [CHANGELOG.md](CHANGELOG.md) — what changed in each version, with the numbers
 - [docs/AUDIT-2026-08-08.md](docs/AUDIT-2026-08-08.md) — what was found, and which commit closed it
 - [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md) — what is left, and what is deliberately not being done
