@@ -41,15 +41,14 @@ Retrained 2026-08-11. Reproduce with `make evaluate`.
 | Per class | `eng` 1.0000 · `mya` 0.9675 · `mnw` 0.9107 |
 | Model | 7.72 MB `.ftz`, quantized |
 
-The reliable-only row is the one to read. Corpus filtering keeps those rows and
-drops the rest.
+Corpus filtering keeps the reliable rows and drops the rest, so the first row is
+the one that describes the workload. Throughput is unmeasured.
 
 Every remaining error is Mon against Burmese, and it is a length problem: 97.7%
 of them are in lines of 40 characters or fewer. Lines carrying a Mon-exclusive
-character had none. `MIN_UNAMBIGUOUS_MYANMAR_LEN` is set at 30 on that evidence.
-
-Two caveats. That threshold was tuned on the split it is scored on, so 0.9980 is
-optimistic by an unknown margin. And throughput has never been measured.
+character had none. `MIN_UNAMBIGUOUS_MYANMAR_LEN` is set at 30 on that evidence,
+tuned on the split it is scored on — so 0.9980 is optimistic by an unknown
+margin.
 
 ## What it cannot do
 
@@ -70,16 +69,16 @@ uv run train --epoch 20 --dim 128
 uv run evaluate
 ```
 
-The corpus is not in this repository. Point `--corpus-root` at one laid out as a
-directory per source, each holding `.txt` files.
+Point `--corpus-root` at a corpus laid out as a directory per source, each
+holding `.txt` files. A directory records where a line came from, not what
+language it is, so the selection step is where that gets fixed; `--explain`
+shows the reasoning.
 
-A directory records where a line came from, not what language it is — the
-selection step is where that gets fixed, and `--explain` shows the reasoning.
-Targets are 150,000 because Burmese has 46,407 unique lines; more buys
-repetition, not data.
+Targets are 150,000 because Burmese has 46,407 unique lines. More buys
+repetition.
 
-`uv run wrangle` cleans raw corpus files before that; `uv run preview` spot-checks a
-model. `make check` runs ruff, mypy and the tests.
+`uv run wrangle` cleans raw files first. `uv run preview` spot-checks a model.
+`make check` runs ruff, mypy and the tests.
 
 ## Deployment
 
