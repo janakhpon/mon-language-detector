@@ -247,11 +247,15 @@ wheels = [
 
 [[package]]
 name = "mon-language-detector"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "fasttext-wheel" },
     { name = "numpy" },
+]
+
+[package.optional-dependencies]
+wrangle = [
     { name = "pandas", version = "2.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.14'" },
     { name = "pandas", version = "3.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.14'" },
     { name = "pyarrow" },
@@ -269,10 +273,11 @@ dev = [
 requires-dist = [
     { name = "fasttext-wheel", specifier = ">=0.9.2" },
     { name = "numpy", specifier = "<2.0" },
-    { name = "pandas", specifier = ">=2.3.3" },
-    { name = "pyarrow", specifier = ">=24.0.0" },
-    { name = "tqdm", specifier = ">=4.67.3" },
+    { name = "pandas", marker = "extra == 'wrangle'", specifier = ">=2.3.3" },
+    { name = "pyarrow", marker = "extra == 'wrangle'", specifier = ">=24.0.0" },
+    { name = "tqdm", marker = "extra == 'wrangle'", specifier = ">=4.67.3" },
 ]
+provides-extras = ["wrangle"]
 
 [package.metadata.requires-dev]
 dev = [

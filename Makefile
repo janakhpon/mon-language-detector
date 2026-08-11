@@ -1,7 +1,7 @@
 .PHONY: install check fix test lint format datasets pipeline train evaluate
 
 install:
-	uv sync --group dev
+	uv sync --group dev --extra wrangle
 
 # The read-only gate. There is no CI, so `main` is only as good as the last time
 # someone ran this.

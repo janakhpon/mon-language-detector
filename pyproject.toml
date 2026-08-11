@@ -1,15 +1,28 @@
 [project]
 name = "mon-language-detector"
-version = "0.1.0"
+version = "0.2.0"
 description = "High-performance Mon/Burmese/English language detector with mixed-language categorization."
 readme = "README.md"
 authors = [
     { name = "janakhpon", email = "jnovaxer@gmail.com" }
 ]
 requires-python = ">=3.11"
+# What `LanguageDetector` actually imports, and nothing else. It was five, so a
+# `pip install` for an 8 MB language detector pulled pandas and pyarrow — over
+# 100 MB of wheels for a `wrangle` CLI that has nothing to do with detection.
+#
+# numpy stays: fasttext-wheel declares it, and the `<2.0` cap is a compatibility
+# pin rather than a dependency of ours. fasttext-wheel 0.9.2 is built against the
+# numpy 1.x ABI, so an unpinned resolve can install a numpy it cannot load.
 dependencies = [
     "fasttext-wheel>=0.9.2",
     "numpy<2.0",
+]
+
+[project.optional-dependencies]
+# `uv run wrangle` reads parquet, csv and tsv. Nothing else in the package does,
+# so it pays for its own dependencies.
+wrangle = [
     "pandas>=2.3.3",
     "pyarrow>=24.0.0",
     "tqdm>=4.67.3",

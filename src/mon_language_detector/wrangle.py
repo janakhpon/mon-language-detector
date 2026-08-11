@@ -2,8 +2,19 @@ import argparse
 import sys
 from pathlib import Path
 
-import pandas as pd
-from tqdm import tqdm
+try:
+    import pandas as pd
+    from tqdm import tqdm
+except ImportError as exc:  # pragma: no cover - exercised by installing without the extra
+    # pandas, pyarrow and tqdm moved to the `wrangle` extra in 0.2.0: they are
+    # over 100 MB of wheels and nothing in the detection path imports them.
+    # A traceback here would read as a broken package rather than a missing
+    # option, so say which one.
+    raise ImportError(
+        "`wrangle` needs the optional dependencies it is named after:\n"
+        "    uv sync --extra wrangle        # or: pip install 'mon-language-detector[wrangle]'\n"
+        "Detection itself does not need them."
+    ) from exc
 
 from .utils import clean_and_normalize, get_logger
 
