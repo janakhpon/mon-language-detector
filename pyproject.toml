@@ -1,15 +1,28 @@
 [project]
 name = "mon-language-detector"
-version = "0.1.0"
+version = "0.2.0"
 description = "High-performance Mon/Burmese/English language detector with mixed-language categorization."
 readme = "README.md"
 authors = [
     { name = "janakhpon", email = "jnovaxer@gmail.com" }
 ]
 requires-python = ">=3.11"
+# What `LanguageDetector` actually imports, and nothing else. It was five, so a
+# `pip install` for an 8 MB language detector pulled pandas and pyarrow — over
+# 100 MB of wheels for a `wrangle` CLI that has nothing to do with detection.
+#
+# numpy stays: fasttext-wheel declares it, and the `<2.0` cap is a compatibility
+# pin rather than a dependency of ours. fasttext-wheel 0.9.2 is built against the
+# numpy 1.x ABI, so an unpinned resolve can install a numpy it cannot load.
 dependencies = [
     "fasttext-wheel>=0.9.2",
     "numpy<2.0",
+]
+
+[project.optional-dependencies]
+# `uv run wrangle` reads parquet, csv and tsv. Nothing else in the package does,
+# so it pays for its own dependencies.
+wrangle = [
     "pandas>=2.3.3",
     "pyarrow>=24.0.0",
     "tqdm>=4.67.3",
@@ -22,10 +35,62 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "pytest>=9.0.3",
+    "ruff>=0.16.2",
+    "mypy>=1.14",
 ]
 
 [project.scripts]
+datasets = "mon_language_detector.datasets:main"
 wrangle = "mon_language_detector.wrangle:main"
 pipeline = "mon_language_detector.pipeline:main"
 train = "mon_language_detector.train:main"
+evaluate = "mon_language_detector.evaluate:main"
 preview = "mon_language_detector.preview:main"
+
+# The linters were run ad hoc and declared nowhere, so the debt was invisible:
+# 97 findings under this ruleset on a 1,088-line repository, none of them
+# reported by any command anyone was expected to run. `make check` is now that
+# command.
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+# Markdown is excluded because `ruff format` reformats fenced ```python blocks,
+# and this repository's documentation quotes DEFECTIVE code as evidence. It
+# rewrote `docs/AUDIT-2026-08-08.md` on its first run, collapsing the deliberate
+# comment alignment that made the audit's evidence readable — a dated record
+# describes what was true then, and a formatter is not entitled to edit it.
+extend-exclude = ["*.md"]
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "I", "N", "UP", "PL", "RUF"]
+# Short list on purpose. A large ignore block on a repository this size is a
+# decision to keep the debt rather than a configuration; every entry below is
+# here for a stated reason and the rest were fixed.
+ignore = [
+    "E501",    # line length — the formatter owns this, and it disagrees on strings
+    "PLR2004", # magic values — the length thresholds are named in utils.py; the
+               # comparisons ruff flags are inside the tests that probe them, where
+               # the literal IS the assertion
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests construct deliberately malformed input and assert on private helpers.
+"tests/*" = ["PLC0415"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src", "tests"]
+# Not `strict`. `fasttext-wheel` ships no stubs, so strict mode would spend its
+# first hundred errors on a third-party surface we do not control. These four are
+# the settings that catch real defects in our own code.
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
+
+# Third-party surfaces with no stubs. Listed one by one rather than with a
+# blanket `ignore_missing_imports`, so adding a dependency does not silently
+# widen the hole — a new untyped import fails the gate and gets a decision.
+[[tool.mypy.overrides]]
+module = ["fasttext.*", "pandas.*", "tqdm.*"]
+ignore_missing_imports = true

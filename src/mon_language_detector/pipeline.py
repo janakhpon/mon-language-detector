@@ -1,9 +1,16 @@
 import argparse
 import random
+from collections.abc import Callable
 from pathlib import Path
-from typing import List
 
-from .utils import MIN_RELIABLE_LEN, PROJECT_ROOT, clean_and_normalize, get_logger
+from .detector import _is_latin, _is_myanmar, _is_script_bearing
+from .utils import (
+    MIN_RELIABLE_LEN,
+    MIN_SCRIPT_DOMINANCE,
+    PROJECT_ROOT,
+    clean_and_normalize,
+    get_logger,
+)
 
 logger = get_logger(__name__)
 
@@ -11,7 +18,7 @@ VALID_FRACTION = 0.1
 DEFAULT_SEED = 20260808
 
 
-def _extract_lines(path: Path, min_len: int = MIN_RELIABLE_LEN) -> List[str]:
+def _extract_lines(path: Path, min_len: int = MIN_RELIABLE_LEN) -> list[str]:
     """Read and normalize lines from a single file.
 
     `min_len` is inclusive, and shares its default with the detector's
@@ -30,7 +37,22 @@ def _extract_lines(path: Path, min_len: int = MIN_RELIABLE_LEN) -> List[str]:
     return lines
 
 
-def _collect(dirs: List[Path], target: int) -> List[str]:
+def _script_dominant(text: str, is_own_script: Callable[[str], bool]) -> bool:
+    """True if the class's own script holds `MIN_SCRIPT_DOMINANCE` of the letters.
+
+    Digits, punctuation and whitespace are excluded, because "၁၉၉၀" and "1990"
+    say nothing about language and counting them once made every numeric table
+    row score as English (audit C1).
+    """
+    scripted = [c for c in text if _is_script_bearing(c)]
+    if not scripted:
+        return False
+    return sum(1 for c in scripted if is_own_script(c)) / len(scripted) >= MIN_SCRIPT_DOMINANCE
+
+
+def _collect(
+    dirs: list[Path], target: int, is_own_script: Callable[[str], bool] | None = None
+) -> list[str]:
     """Collect DEDUPLICATED lines from all .txt files in the given directories.
 
     Shuffles files before reading to avoid source-order bias.
@@ -43,8 +65,16 @@ def _collect(dirs: List[Path], target: int) -> List[str]:
     most duplicated and the worst affected.
 
     Upsampling now happens after the split, on the train side only.
+
+    `is_own_script` gates class membership on script dominance. A corpus
+    directory says where a line came from, not what language it is: 6.51% of the
+    Mon-labelled validation lines were over 85% Latin — Mon Wikipedia reference
+    rows like "Heinz, L.C. (6 March 1962)." — so the class taught English -> mnw
+    and then scored the detector wrong for disagreeing. Measured on the first
+    clean run, that was 993 of 1,204 Mon errors. Pass `None` only where the
+    directory really is the label.
     """
-    files: List[Path] = []
+    files: list[Path] = []
     for d in dirs:
         if d.is_dir():
             files.extend(d.glob("**/*.txt"))
@@ -52,18 +82,25 @@ def _collect(dirs: List[Path], target: int) -> List[str]:
             files.append(d)
 
     random.shuffle(files)
-    lines: List[str] = []
+    lines: list[str] = []
+    dropped = 0
     for f in files:
-        lines.extend(_extract_lines(f))
+        for line in _extract_lines(f):
+            if is_own_script is not None and not _script_dominant(line, is_own_script):
+                dropped += 1
+                continue
+            lines.append(line)
         if len(lines) >= target * 2:  # collect a 2x buffer before trimming
             break
+    if dropped:
+        logger.info(f"  dropped {dropped:,} lines whose majority script is not the class's")
 
     random.shuffle(lines)
 
     # Corpora contain naturally repeated lines -- boilerplate, headers, stock
     # phrases -- and those straddle the split just as upsampled copies would.
     seen: set[str] = set()
-    unique: List[str] = []
+    unique: list[str] = []
     for line in lines:
         if line not in seen:
             seen.add(line)
@@ -72,13 +109,13 @@ def _collect(dirs: List[Path], target: int) -> List[str]:
     return unique[:target]
 
 
-def _split(lines: List[str], valid_fraction: float) -> tuple[List[str], List[str]]:
+def _split(lines: list[str], valid_fraction: float) -> tuple[list[str], list[str]]:
     """Split into (train, valid). Input must already be deduplicated."""
     n_valid = int(len(lines) * valid_fraction)
     return lines[n_valid:], lines[:n_valid]
 
 
-def _upsample(lines: List[str], target: int) -> List[str]:
+def _upsample(lines: list[str], target: int) -> list[str]:
     """Repeat lines up to `target`. Only ever applied to a train split.
 
     Upsampling an evaluation set would measure the same rows repeatedly, so
@@ -90,7 +127,7 @@ def _upsample(lines: List[str], target: int) -> List[str]:
     return lines[:target]
 
 
-def _make_mixed(mon: List[str], eng: List[str], mya: List[str]) -> List[str]:
+def _make_mixed(mon: list[str], eng: list[str], mya: list[str]) -> list[str]:
     """
     Synthesize code-switched Mon samples by injecting a foreign word mid-sentence.
     Labelled mnw since the base sentence is Mon-dominant.
@@ -105,7 +142,7 @@ def _make_mixed(mon: List[str], eng: List[str], mya: List[str]) -> List[str]:
         logger.warning("Insufficient donor words for code-switching synthesis.")
         return []
 
-    samples: List[str] = []
+    samples: list[str] = []
     target = len(mon) // 10
     for _ in range(target):
         words = random.choice(mon).split()
@@ -119,10 +156,11 @@ def _make_mixed(mon: List[str], eng: List[str], mya: List[str]) -> List[str]:
     return samples
 
 
-def build_dataset(
-    eng_dirs: List[Path],
-    mya_dirs: List[Path],
-    mon_dirs: List[Path],
+def build_dataset(  # noqa: PLR0913 — nine CLI flags, each one a separate decision
+    *,
+    eng_dirs: list[Path],
+    mya_dirs: list[Path],
+    mon_dirs: list[Path],
     out_train: Path,
     out_valid: Path,
     target_eng: int,
@@ -130,7 +168,14 @@ def build_dataset(
     target_mon: int,
     seed: int = DEFAULT_SEED,
 ) -> None:
-    """Compile a labelled, shuffled fastText training dataset from raw corpora."""
+    """Compile a labelled, shuffled fastText training dataset from raw corpora.
+
+    Keyword-only, and not to satisfy a linter. Three of these are parallel
+    `list[Path]` and three more are parallel `int`, so transposing `target_eng`
+    and `target_mya` positionally is silent, type-correct, and produces a corpus
+    with the wrong language balance — a defect that would surface as a confusing
+    Precision@1 weeks later. The `*` makes that call unwritable.
+    """
     # Every shuffle below draws from this. Without it the split, the file order
     # and the synthetic mixed samples all differ per run, so a reported metric
     # cannot be reproduced and a regression is indistinguishable from the RNG.
@@ -139,10 +184,12 @@ def build_dataset(
 
     # Split each language before upsampling, so no repeated line can appear on
     # both sides. _collect returns deduplicated lines for the same reason.
-    eng_all = _collect(eng_dirs, target_eng)
-    mya_all = _collect(mya_dirs, target_mya)
-    mon_all = _collect(mon_dirs, target_mon)
-    logger.info(f"unique  English: {len(eng_all):,}  Burmese: {len(mya_all):,}  Mon: {len(mon_all):,}")
+    eng_all = _collect(eng_dirs, target_eng, _is_latin)
+    mya_all = _collect(mya_dirs, target_mya, _is_myanmar)
+    mon_all = _collect(mon_dirs, target_mon, _is_myanmar)
+    logger.info(
+        f"unique  English: {len(eng_all):,}  Burmese: {len(mya_all):,}  Mon: {len(mon_all):,}"
+    )
 
     eng_train, eng_valid = _split(eng_all, VALID_FRACTION)
     mya_train, mya_valid = _split(mya_all, VALID_FRACTION)
@@ -158,7 +205,7 @@ def build_dataset(
     mya_train = _upsample(mya_train, target_mya)
     mon_train = _upsample(mon_train, target_mon)
 
-    def _label(pairs: List[tuple[str, List[str]]]) -> List[str]:
+    def _label(pairs: list[tuple[str, list[str]]]) -> list[str]:
         return [f"__label__{tag} {line}" for tag, lines in pairs for line in lines]
 
     train = _label(
@@ -198,8 +245,12 @@ def main() -> None:
     p.add_argument("--target-eng", type=int, default=1_000_000)
     p.add_argument("--target-mya", type=int, default=1_000_000)
     p.add_argument("--target-mon", type=int, default=1_000_000)
-    p.add_argument("--seed", type=int, default=DEFAULT_SEED,
-                   help="seeds every shuffle, so the split is reproducible")
+    p.add_argument(
+        "--seed",
+        type=int,
+        default=DEFAULT_SEED,
+        help="seeds every shuffle, so the split is reproducible",
+    )
     args = p.parse_args()
 
     build_dataset(

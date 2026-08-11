@@ -212,6 +212,12 @@ AGENTS.md
 # Data & Models
 data/*.txt
 data/*.bin
+# `train.py` writes its quantized output to data/ and the shipped copy lives in
+# the package. Ignoring the build artifact keeps them from becoming two models
+# with one name — the shape of audit finding H2, where the wheel carried no
+# model because the file sat outside the package. The negation below is what
+# tracks the one that ships.
+data/*.ftz
 !src/mon_language_detector/data/*.ftz
 
 # Datasets
