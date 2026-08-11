@@ -22,6 +22,8 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "pytest>=9.0.3",
+    "ruff>=0.16.2",
+    "mypy>=1.14",
 ]
 
 [project.scripts]
@@ -29,3 +31,51 @@ wrangle = "mon_language_detector.wrangle:main"
 pipeline = "mon_language_detector.pipeline:main"
 train = "mon_language_detector.train:main"
 preview = "mon_language_detector.preview:main"
+
+# The linters were run ad hoc and declared nowhere, so the debt was invisible:
+# 97 findings under this ruleset on a 1,088-line repository, none of them
+# reported by any command anyone was expected to run. `make check` is now that
+# command.
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+# Markdown is excluded because `ruff format` reformats fenced ```python blocks,
+# and this repository's documentation quotes DEFECTIVE code as evidence. It
+# rewrote `docs/AUDIT-2026-08-08.md` on its first run, collapsing the deliberate
+# comment alignment that made the audit's evidence readable — a dated record
+# describes what was true then, and a formatter is not entitled to edit it.
+extend-exclude = ["*.md"]
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "I", "N", "UP", "PL", "RUF"]
+# Short list on purpose. A large ignore block on a repository this size is a
+# decision to keep the debt rather than a configuration; every entry below is
+# here for a stated reason and the rest were fixed.
+ignore = [
+    "E501",    # line length — the formatter owns this, and it disagrees on strings
+    "PLR2004", # magic values — the length thresholds are named in utils.py; the
+               # comparisons ruff flags are inside the tests that probe them, where
+               # the literal IS the assertion
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests construct deliberately malformed input and assert on private helpers.
+"tests/*" = ["PLC0415"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src", "tests"]
+# Not `strict`. `fasttext-wheel` ships no stubs, so strict mode would spend its
+# first hundred errors on a third-party surface we do not control. These four are
+# the settings that catch real defects in our own code.
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
+
+# Third-party surfaces with no stubs. Listed one by one rather than with a
+# blanket `ignore_missing_imports`, so adding a dependency does not silently
+# widen the hole — a new untyped import fails the gate and gets a decision.
+[[tool.mypy.overrides]]
+module = ["fasttext.*", "pandas.*", "tqdm.*"]
+ignore_missing_imports = true

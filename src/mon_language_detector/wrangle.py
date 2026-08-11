@@ -1,19 +1,18 @@
 import argparse
-import pandas as pd
-from pathlib import Path
 import sys
-from typing import Optional, Union
+from pathlib import Path
 
+import pandas as pd
 from tqdm import tqdm
 
-from .utils import get_logger, clean_and_normalize
+from .utils import clean_and_normalize, get_logger
 
 logger = get_logger(__name__)
 
 _COMMON_TEXT_COLS = ("text", "sentence", "transcription", "line", "content", "raw_text")
 
 
-def _guess_text_col(df: pd.DataFrame) -> Union[str, int]:
+def _guess_text_col(df: pd.DataFrame) -> str | int:
     """Return the most likely text column name or integer index."""
     for col in _COMMON_TEXT_COLS:
         if col in df.columns:
@@ -41,8 +40,8 @@ class CorpusCleaner:
         self,
         src: Path,
         dst: Path,
-        text_col: Optional[str] = None,
-        header: Optional[bool] = None,
+        text_col: str | None = None,
+        header: bool | None = None,
     ) -> None:
         ext = src.suffix.lower()
         try:
@@ -75,10 +74,10 @@ class CorpusCleaner:
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Batch clean and normalize corpus files")
-    p.add_argument("--input",    type=Path, required=True, help="File or directory")
-    p.add_argument("--output",   type=Path, required=True, help="Output file or directory")
-    p.add_argument("--text-col", type=str,  help="Text column name (auto-detected if omitted)")
-    p.add_argument("--header",   choices=["true", "false"], help="Override header detection")
+    p.add_argument("--input", type=Path, required=True, help="File or directory")
+    p.add_argument("--output", type=Path, required=True, help="Output file or directory")
+    p.add_argument("--text-col", type=str, help="Text column name (auto-detected if omitted)")
+    p.add_argument("--header", choices=["true", "false"], help="Override header detection")
     args = p.parse_args()
 
     if not args.input.exists():
@@ -91,7 +90,8 @@ def main() -> None:
     if args.input.is_dir():
         args.output.mkdir(parents=True, exist_ok=True)
         files = [
-            f for ext in ("*.parquet", "*.tsv", "*.csv", "*.txt")
+            f
+            for ext in ("*.parquet", "*.tsv", "*.csv", "*.txt")
             for f in args.input.glob(ext)
             if "_cleaned" not in f.name
         ]

@@ -41,21 +41,23 @@ def default_model_path() -> Path:
     """
     return Path(str(resources.files("mon_language_detector") / "data" / MODEL_FILENAME))
 
+
 def get_logger(name: str) -> logging.Logger:
     """Return a logger with structured SE Brain compliant formatting."""
     logger = logging.getLogger(name)
     if not logger.handlers:
         handler = logging.StreamHandler()
         formatter = logging.Formatter(
-            '%(asctime)s [%(levelname)s] %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
+            "%(asctime)s [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
         )
         handler.setFormatter(formatter)
         logger.addHandler(handler)
         logger.setLevel(logging.INFO)
     return logger
 
+
 logger = get_logger(__name__)
+
 
 def clean_and_normalize(text: str) -> str:
     """
@@ -65,20 +67,20 @@ def clean_and_normalize(text: str) -> str:
     """
     if not isinstance(text, str) or not text:
         return ""
-        
+
     text = text.strip()
     try:
         # Standard SE Brain constraints for Mon/Burmese scripts
-        text = unicodedata.normalize('NFC', text)
-        text = text.replace('\u200b', '') # ZWSP
-        text = text.replace('\u200c', '') # ZWNJ
-        text = text.replace('\u200d', '') # ZWJ
-        text = text.replace('\ufeff', '') # BOM
-        
+        text = unicodedata.normalize("NFC", text)
+        text = text.replace("\u200b", "")  # ZWSP
+        text = text.replace("\u200c", "")  # ZWNJ
+        text = text.replace("\u200d", "")  # ZWJ
+        text = text.replace("\ufeff", "")  # BOM
+
         # Clean whitespaces
-        text = text.replace('\n', ' ').replace('\t', ' ')
-        while '  ' in text:
-            text = text.replace('  ', ' ')
+        text = text.replace("\n", " ").replace("\t", " ")
+        while "  " in text:
+            text = text.replace("  ", " ")
         return text.strip()
     except Exception as e:
         logger.warning(f"Normalization failed for text: {e}")

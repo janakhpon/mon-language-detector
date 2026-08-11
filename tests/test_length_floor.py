@@ -13,9 +13,10 @@ constant so the pair cannot drift apart again silently.
 
 from pathlib import Path
 
+from test_detector import get_test_detector
+
 from mon_language_detector.pipeline import _extract_lines
 from mon_language_detector.utils import MIN_RELIABLE_LEN, MIN_UNAMBIGUOUS_MYANMAR_LEN
-from test_detector import get_test_detector
 
 
 def _write(tmp_path: Path, *lines: str) -> Path:
