@@ -36,8 +36,11 @@ Three things the retrain taught, all now in code:
   0.9561 while dropping Burmese precision from 0.8143 to 0.7645. `train.py` now
   reports per class, for the quantized artifact as well as the full model.
 
-**Still open from this section:** throughput has never been measured, on any
-hardware. It stays absent from the README rather than guessed.
+**Closed 2026-08-11:** throughput is measured — 28,149 lines/s single-threaded on
+an Apple M5, in the README with the hardware named. `predict_batch` was the
+suspect and was not the problem: batching the fastText call measured 1.1x, while
+classifying each character three times measured 4.2x on the ratio work. One pass
+and a memo, and the profile no longer has a Python hot spot.
 
 **Publishing to PyPI is now unblocked on the artifact** and blocked on nothing
 else engineering can see. The corpus's own licence and personal-data questions
@@ -124,14 +127,20 @@ been the expensive way to find that out.
 
 ---
 
-## 4. CI
+## 4. Closed: CI, packaging and the release record
 
-`make check` exists and is green. Nothing runs it but a person.
+- **CI** runs lint, types and tests on 3.11 to 3.13, plus a job that builds the
+  wheel, installs it outside the repo and loads the model from it. That second
+  job is the one worth having: audit H2 shipped a wheel with no model and every
+  test still passed, because an editable install resolved the path back into the
+  checkout.
+- **pandas, pyarrow and tqdm** moved to a `wrangle` extra. Installing an 8 MB
+  detector pulled over 100 MB of wheels for a CLI it does not use.
+- **CHANGELOG.md**, and the version is 0.2.0 rather than 0.1.0 across a retrain
+  that replaced the model.
 
-Copy `mon_tokenizer/.github/workflows/ci.yml`, where the actions are already
-pinned to commit SHAs. This is the last item from the 2026-08-09 tooling list —
-declaring the linters, fixing the 97 findings and adding `make check` all closed
-in `32ed3d5`. Running them on push is what is left.
+Still open here: no tag has been cut, and nothing is published to PyPI. That is
+gated on the corpus licence question below, not on engineering.
 
 ---
 
