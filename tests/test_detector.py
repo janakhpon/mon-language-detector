@@ -41,7 +41,14 @@ def test_mixed_detection():
     # Mixed English and Mon
     res = d.predict("Computer သွက်ဂွံစကာ")
     assert res.label == "mnw-eng"
-    assert res.reliable is True
+
+    # This asserted `reliable is True` until 2026-08-11, and that was the defect
+    # rather than the contract. `သွက်ဂွံစကာ` is ten Myanmar characters with no
+    # Mon-exclusive one, and the SAME fragment on its own returns
+    # `Detection("mnw", ..., reliable=False)` — MIN_UNAMBIGUOUS_MYANMAR_LEN is
+    # 20. Prepending the English word "Computer" cannot tell anyone more about
+    # which Myanmar language follows it, so the two answers have to agree.
+    assert res.reliable is False
 
 
 def test_unreliable_short():

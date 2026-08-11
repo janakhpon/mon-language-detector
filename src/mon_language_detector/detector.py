@@ -208,6 +208,31 @@ class LanguageDetector:
         fasttext.FastText.eprint = lambda x: None
         self.model = fasttext.load_model(str(path))
 
+    def _mixed_label(self, cleaned: str, has_mon: bool) -> tuple[str, Basis, bool]:
+        """Label a text that carries both Latin and Myanmar in quantity.
+
+        Returns `(label, basis, myanmar_is_judgeable)`. The third is whether the
+        Myanmar half rests on enough characters to separate Mon from Burmese;
+        `predict` turns a False into `reliable=False`.
+
+        Extracted because it stopped being one expression. It was:
+
+            "mnw-eng" if (has_mon or lang == "mnw") else "mya-eng"
+
+        which conflates two questions — what the whole string is, and which
+        Myanmar language is inside it. See the caller for how that produced
+        `mya-eng` on Mon text with nothing suggesting Burmese.
+        """
+        if has_mon:
+            # A Mon-exclusive character settles it without a second prediction.
+            return "mnw-eng", "mon-exclusive", True
+
+        fragment = "".join(c for c in cleaned if _is_myanmar(c))
+        (fragment_label,), _ = self.model.predict(fragment, k=1)
+        side = self._FASTTEXT_LABELS.get(fragment_label, "mya")
+        label = f"{side}-eng" if side in ("mnw", "mya") else "mya-eng"
+        return label, "posterior", len(fragment) >= MIN_UNAMBIGUOUS_MYANMAR_LEN
+
     def predict(self, text: str) -> Detection:  # noqa: PLR0911
         """Classify a single text string.
 
@@ -279,9 +304,28 @@ class LanguageDetector:
         # Label synthesis
         label = lang
         basis: Basis = "posterior"
+        # Only the mixed branch can leave the Myanmar side undecided; every other
+        # path either has the whole string in one script or a Mon-exclusive
+        # character to settle it.
+        myanmar_is_judgeable = True
         if latin > 0.15 and myanmar > 0.15:
-            # Mixed script
-            label = "mnw-eng" if (has_mon or lang == "mnw") else "mya-eng"
+            # Mixed script. Which Myanmar language is a SEPARATE question from
+            # what the whole string is, and this branch used to conflate them:
+            #
+            #     "mnw-eng" if (has_mon or lang == "mnw") else "mya-eng"
+            #
+            # `lang` is the verdict on the whole string, so on a sentence that is
+            # 82% Latin it is `eng` — correctly — and a Mon fragment carrying no
+            # Mon-exclusive character fell to the `else` and came back `mya-eng`
+            # with nothing in the input suggesting Burmese. It stayed invisible
+            # while the model returned `mnw` for English text, which it did until
+            # the training class was cleaned.
+            #
+            # Ask the question that is actually open: classify the Myanmar
+            # characters on their own. Measured on the case that exposed this,
+            # the sentence reads `eng` at 1.000 and its Myanmar substring reads
+            # `mnw` at 1.000.
+            label, basis, myanmar_is_judgeable = self._mixed_label(cleaned, has_mon)
         elif latin > 0.85:
             # Keep the model's posterior. Assigning the script ratio here made
             # `confidence` a probability on some paths and a ratio on others,
@@ -302,6 +346,11 @@ class LanguageDetector:
             # stands on its own at any length.
             reliable = True
         elif label in ("mnw", "mya") and len(cleaned) < MIN_UNAMBIGUOUS_MYANMAR_LEN:
+            reliable = False
+        elif not myanmar_is_judgeable:
+            # A mixed-script label whose Myanmar side was decided from a fragment
+            # too short to separate Mon from Burmese. The `-eng` half is solid;
+            # the half a caller filtering a Mon corpus cares about is not.
             reliable = False
 
         return Detection(label, conf, reliable, basis)
