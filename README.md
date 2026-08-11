@@ -32,14 +32,15 @@ if result.reliable and result.label.startswith("mnw"):
 
 ## Accuracy
 
-Retrained 2026-08-11. Reproduce with `make evaluate`.
+Retrained 2026-08-11. `make evaluate` reproduces these, once a split exists —
+`data/` is not in the repository, so build one first (below).
 
 | | |
 |---|---|
 | Where `reliable` | **0.9980** over 27,085 lines, 77.4% of the split |
 | Overall | 0.9565 over 34,988 held-out lines |
 | Per class | `eng` 1.0000 · `mya` 0.9675 · `mnw` 0.9107 |
-| Model | 7.72 MB `.ftz`, quantized |
+| Model | 8.10 MB `.ftz`, quantized |
 
 Corpus filtering keeps the reliable rows and drops the rest, so the first row is
 the one that describes the workload. Throughput is unmeasured.

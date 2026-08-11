@@ -118,7 +118,10 @@ def train_model(  # noqa: PLR0913 — eleven CLI flags, each one a hyperparamete
     model_output.parent.mkdir(parents=True, exist_ok=True)
     try:
         model.save_model(str(model_output))
-        size_mb = model_output.stat().st_size / (1024 * 1024)
+        # 1e6, not 1024**2. This divided by 1024**2 and logged the result as "MB",
+        # so the shipped artifact was reported as 7.72 MB when it is 8.10 MB, and
+        # that number reached the README.
+        size_mb = model_output.stat().st_size / 1e6
         logger.info(f"Full model saved to {model_output} ({size_mb:.2f} MB)")
     except OSError as e:
         logger.error(f"Failed to save model to {model_output}: {e}")
@@ -129,7 +132,7 @@ def train_model(  # noqa: PLR0913 — eleven CLI flags, each one a hyperparamete
         model.quantize(input=str(train_file), qnorm=True, retrain=True, cutoff=100000)
         model.save_model(str(quantized_output))
 
-        q_size_mb = quantized_output.stat().st_size / (1024 * 1024)
+        q_size_mb = quantized_output.stat().st_size / 1e6
         logger.info(f"Compressed model saved to {quantized_output} ({q_size_mb:.2f} MB)")
         # The quantized artifact is the one that ships, so it gets the same
         # report as the full model rather than a bare Precision@1. Quantization
