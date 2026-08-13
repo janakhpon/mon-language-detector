@@ -53,11 +53,40 @@ def _unicode_name(cp: int) -> str:
 # At line level over 306,564 Mon lines, the corrected set fires on 39.99% against
 # the old 36.62% — 10,395 lines that carried a hard signal nothing could see.
 #
-# Deliberately NOT here: U+103A ASAT and U+1035 VOWEL SIGN E ABOVE. Both appear
-# on lists of "codepoints a Mon font must be able to draw", which answers a
-# different question — whether a *font* can render Mon — and U+103A appears
-# throughout Burmese. Exclusivity and capability are not the same set, and
-# borrowing one list for the other is how a Burmese letter gets called Mon.
+# Deliberately NOT here: U+103A ASAT and U+1035 VOWEL SIGN E ABOVE — for two
+# different reasons, and only one of them is settled.
+#
+# U+103A is not arguable: it appears throughout Burmese. It reaches lists like
+# this one from "codepoints a Mon font must be able to draw", which answers
+# whether a *font* can render Mon. Exclusivity and capability are not the same
+# set, and borrowing one list for the other is how a Burmese letter gets called
+# Mon.
+#
+# U+1035 is arguable, and a sibling repository argues the other side. mon_OCR's
+# corpus bucketer includes it — eleven codepoints, not ten — on a measurement
+# this repository has not made: **477,677 occurrences in its Mon buckets, and 0
+# hits in 33,782 Myanmar-script lines** of directories that hold nothing but
+# Burmese. Nothing here contradicts that, and no claim is made that U+1035 turns
+# up in Burmese. On the evidence it very likely is Mon-exclusive in fact.
+#
+# It stays out because of what this set is FOR. A match overrides the model and
+# stamps `reliable=True`, so membership is a precision claim, and a precision
+# claim has to be checkable by the person relying on it. The ten above are
+# checkable against the Unicode standard by anyone — that is what
+# `test_the_set_is_exactly_what_unicode_calls_mon` does, from `unicodedata` and
+# nothing else. The eleventh is checkable only against a corpus the reader does
+# not have and cannot rerun, so shipping it would mean asking callers to take a
+# measurement on trust.
+#
+# Both positions have a name in the contract these repositories share:
+# MON_EXCLUSIVE is the nomenclature rule — a codepoint whose Unicode name
+# carries MON as a word — and MON_EXCLUSIVE_ATTESTED is that set plus any
+# codepoint measured absent from a Burmese reference corpus and present in Mon.
+# This is MON_EXCLUSIVE. A bucketer standing on its own corpus is entitled to
+# the attested set; a detector whose output travels further than its evidence is
+# not. Adding U+1035 here is not a one-line edit to the literal below — it means
+# adopting the other rule, and the test would have to stop deriving the set and
+# start asserting a corpus this repository publishes.
 MON_EXCLUSIVE_CODEPOINTS: frozenset[int] = frozenset(
     {
         0x1028,  # MYANMAR LETTER MON E                    (Burmese uses U+1027)
