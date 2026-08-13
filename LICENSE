@@ -1,3 +1,27 @@
+SCOPE — READ THIS FIRST
+
+This MIT grant covers the SOFTWARE in this repository only:
+
+    src/mon_language_detector/*.py
+    tests/*.py
+    Makefile
+
+It does NOT cover the trained model shipped inside the package at
+
+    src/mon_language_detector/data/langid_mon_mya_eng_compressed.ftz
+
+That file is a derived work of a corpus this project neither collected nor owns.
+Mon Wikipedia is 54.7% of the raw bytes fed to the Mon class and is CC BY-SA 4.0,
+which is copyleft; the Independent Mon News Agency archive is a further 26.6% and
+has no established licence at all. An MIT grant over the model would strip a
+ShareAlike obligation this project cannot waive and issue a permission it does
+not hold.
+
+For the model, see LICENSE-MODEL.md. It states the sources, which of their terms
+are established, and which are not.
+
+-------------------------------------------------------------------------------
+
 MIT License
 
 Copyright (c) 2026 Ja Nakh

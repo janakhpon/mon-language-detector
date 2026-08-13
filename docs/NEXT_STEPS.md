@@ -4,8 +4,8 @@ Forward work for this repository. The findings and their closures live in
 [AUDIT-2026-08-08.md](AUDIT-2026-08-08.md), which carries a status table; this
 file is what is left and in what order.
 
-**Re-verified 2026-08-11:** `make check` green — ruff format, ruff check, mypy
-and **74 passed**. All eight findings from the 2026-08-08 audit are closed, and
+**Re-verified 2026-08-13:** `make check` green — ruff format, ruff check, mypy
+and **78 passed**. All eight findings from the 2026-08-08 audit are closed, and
 so is the retrain that was blocking everything.
 
 ---
@@ -19,7 +19,7 @@ their denominators and the command that reproduces them.
 | | measured on 34,988 held-out lines |
 |---|---|
 | detector accuracy | **0.9565** |
-| accuracy where `reliable` | **0.9888** over 29,102 lines (83.2%) |
+| accuracy where `reliable` | **0.9980** over 27,085 lines (77.4%) |
 | per class | `eng` 1.0000 · `mya` 0.9675 · `mnw` 0.9107 |
 
 Three things the retrain taught, all now in code:
@@ -44,8 +44,12 @@ and a memo, and the profile no longer has a Python hot spot.
 
 **Publishing to PyPI is now unblocked on the artifact** and blocked on nothing
 else engineering can see. The corpus's own licence and personal-data questions
-are the sibling project's `LIMITATIONS.md` §upstream, and they govern whether a
-model trained on it may be distributed at all. That is a decision, not a task.
+govern whether a model trained on it may be distributed at all, and they are now
+written down here rather than only next door: `LICENSE-MODEL.md` states the
+sources and their terms, `LICENSE` is scoped off the model, and the README says
+plainly that PyPI publication is pending. The upstream record is
+`mon_OCR/docs/LIMITATIONS.md` §upstream and `MonCorpusCollection/LICENSE-CORPUS.md`.
+That is a decision, not a task.
 
 ---
 
@@ -139,8 +143,10 @@ been the expensive way to find that out.
 - **CHANGELOG.md**, and the version is 0.2.0 rather than 0.1.0 across a retrain
   that replaced the model.
 
-Still open here: no tag has been cut, and nothing is published to PyPI. That is
-gated on the corpus licence question below, not on engineering.
+Still open here: nothing is published to PyPI, and `pypi.org/pypi/mon-language-detector/json`
+returns 404 — the README used to claim otherwise and now gives the git install
+instead. `v0.2.0` is tagged (2026-08-11); no release is cut against it.
+Publication is gated on the corpus licence question below, not on engineering.
 
 ---
 
