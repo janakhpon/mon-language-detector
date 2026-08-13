@@ -64,10 +64,19 @@ def _unicode_name(cp: int) -> str:
 #
 # U+1035 is arguable, and a sibling repository argues the other side. mon_OCR's
 # corpus bucketer includes it — eleven codepoints, not ten — on a measurement
-# this repository has not made: **477,677 occurrences in its Mon buckets, and 0
-# hits in 33,782 Myanmar-script lines** of directories that hold nothing but
-# Burmese. Nothing here contradicts that, and no claim is made that U+1035 turns
-# up in Burmese. On the evidence it very likely is Mon-exclusive in fact.
+# this repository has not made: **481,926 occurrences in 1,139,043 Mon lines,
+# and 0 in all 66,156 Burmese lines**, bucketed by that repo's own `bucket_of`
+# and NFC-normalised. Nothing here contradicts it, and no claim is made that
+# U+1035 turns up in Burmese. On that evidence it very likely is Mon-exclusive
+# in fact.
+#
+# Two further findings from the same measurement, both of which cut against
+# this repository's rule rather than for it. **U+1035 is cleaner than five
+# characters the rule admits**: U+1034, U+105A, U+105C, U+105E and U+1060 each
+# register one to three Burmese-bucket occurrences, and U+1035 registers none.
+# And the earlier figures quoted here, 477,677 in 33,782 lines, were stale —
+# copied from a comment rather than re-derived, which is the defect this file's
+# own rule exists to prevent.
 #
 # It stays out because of what this set is FOR. A match overrides the model and
 # stamps `reliable=True`, so membership is a precision claim, and a precision
