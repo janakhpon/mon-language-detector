@@ -82,15 +82,37 @@ repetition.
 `uv run wrangle` cleans raw files first. `uv run preview` spot-checks a model.
 `make check` runs ruff, mypy and the tests.
 
+## Install
+
+**Not on PyPI.** Install from git — the model is tracked in the repository, so it
+comes with the package:
+
+```bash
+pip install "git+https://github.com/janakhpon/mon-language-detector.git"
+```
+
+The `wrangle` CLI needs the `[wrangle]` extra on top; detection does not:
+
+```bash
+pip install "mon-language-detector[wrangle] @ git+https://github.com/janakhpon/mon-language-detector.git"
+```
+
+PyPI publication is pending, and it is gated on the training corpus's licence
+rather than on the package — see [LICENSE-MODEL.md](LICENSE-MODEL.md).
+
 ## Deployment
 
 The `.ftz` works with the standard fastText bindings on Android, iOS and WASM.
 
-Install with `pip install mon-language-detector`. The `wrangle` CLI needs
-`[wrangle]` on top; detection does not.
+## Licence
+
+MIT for the code. The shipped model is a derived work of a corpus with mixed and
+partly unresolved terms, and MIT does not reach it — [LICENSE-MODEL.md](LICENSE-MODEL.md)
+states which sources are established and which are not.
 
 ## Documents
 
 - [CHANGELOG.md](CHANGELOG.md) — what changed in each version, with the numbers
+- [LICENSE-MODEL.md](LICENSE-MODEL.md) — what the model was trained on, and under what terms
 - [docs/AUDIT-2026-08-08.md](docs/AUDIT-2026-08-08.md) — what was found, and which commit closed it
 - [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md) — what is left, and what is deliberately not being done
