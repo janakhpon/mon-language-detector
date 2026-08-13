@@ -4,8 +4,8 @@ Forward work for this repository. The findings and their closures live in
 [AUDIT-2026-08-08.md](AUDIT-2026-08-08.md), which carries a status table; this
 file is what is left and in what order.
 
-**Re-verified 2026-08-11:** `make check` green — ruff format, ruff check, mypy
-and **74 passed**. All eight findings from the 2026-08-08 audit are closed, and
+**Re-verified 2026-08-13:** `make check` green — ruff format, ruff check, mypy
+and **78 passed**. All eight findings from the 2026-08-08 audit are closed, and
 so is the retrain that was blocking everything.
 
 ---
@@ -19,7 +19,7 @@ their denominators and the command that reproduces them.
 | | measured on 34,988 held-out lines |
 |---|---|
 | detector accuracy | **0.9565** |
-| accuracy where `reliable` | **0.9888** over 29,102 lines (83.2%) |
+| accuracy where `reliable` | **0.9980** over 27,085 lines (77.4%) |
 | per class | `eng` 1.0000 · `mya` 0.9675 · `mnw` 0.9107 |
 
 Three things the retrain taught, all now in code:
