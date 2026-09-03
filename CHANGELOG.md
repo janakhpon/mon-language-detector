@@ -3,14 +3,17 @@
 Notable changes, newest first. Dates are when the work landed, not when it was
 released. Every number names what it measures.
 
-## 0.2.1 — 2026-09-04
+## 0.2.1 — 2026-09-03 (unreleased)
 
-The first release actually published to PyPI. `v0.2.0` was tagged on
-2026-08-11 and never published; the tag itself pointed at a commit whose
-README told a reader to `pip install mon-language-detector` from a name that
-returns 404 on PyPI's own API. Rather than force-move a tag nobody had
-installed anything from, this bumps the version and leaves `v0.2.0` as a
-historical marker of the mistake.
+Prepares the first PyPI release; nothing is published yet. `v0.2.0` was tagged
+on 2026-08-11 and never published, and that tag points at a commit whose README
+told readers to `pip install mon-language-detector` — a name PyPI still returns
+404 for. Rather than force-move a tag nobody installed from, this bumps the
+version and leaves `v0.2.0` where it is.
+
+Publishing needs a PyPI pending publisher registered for this repository and
+workflow, then a `v0.2.1` tag. Until both happen, this heading stays marked
+unreleased.
 
 - **Fixed the install instructions.** Replaced with the `git+https://` form
   that actually resolves, and added `LICENSE-MODEL.md` for the tracked 8 MB
