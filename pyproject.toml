@@ -1,6 +1,6 @@
 [project]
 name = "mon-language-detector"
-version = "0.2.0"
+version = "0.2.1"
 description = "High-performance Mon/Burmese/English language detector with mixed-language categorization."
 readme = "README.md"
 authors = [

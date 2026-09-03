@@ -14,6 +14,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Called by release.yml so a tag cannot publish without this passing.
+  workflow_call:
 
 jobs:
   check:

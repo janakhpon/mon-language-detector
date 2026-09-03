@@ -3,6 +3,32 @@
 Notable changes, newest first. Dates are when the work landed, not when it was
 released. Every number names what it measures.
 
+## 0.2.1 — 2026-09-04
+
+The first release actually published to PyPI. `v0.2.0` was tagged on
+2026-08-11 and never published; the tag itself pointed at a commit whose
+README told a reader to `pip install mon-language-detector` from a name that
+returns 404 on PyPI's own API. Rather than force-move a tag nobody had
+installed anything from, this bumps the version and leaves `v0.2.0` as a
+historical marker of the mistake.
+
+- **Fixed the install instructions.** Replaced with the `git+https://` form
+  that actually resolves, and added `LICENSE-MODEL.md` for the tracked 8 MB
+  `.ftz` model, which the repository's MIT grant never covered (`8094e07`).
+- **Corrected the reliable-accuracy figure** a threshold change had moved
+  without a matching doc update (`15e2b59`).
+- **Documented the U+1035 disagreement with `mon_OCR`'s corpus bucketer**,
+  including a re-derivation of the figures after they were found quoted stale
+  from a prior measurement (`1fbf746`, `0c18fed`). `MON_EXCLUSIVE_CODEPOINTS`
+  itself is unchanged — ten codepoints, derived from Unicode names carrying
+  MON as a word — the correction is entirely in what the surrounding comment
+  claims about a codepoint deliberately left out of that set.
+- **Added `release.yml`.** Trusted publishing (OIDC), gated on the same `ci`
+  and `wheel` jobs every pull request runs — this repository's own audit
+  finding H2 was a wheel shipping without its model, invisible to a source-tree
+  test run, which is exactly what the `wheel` job exists to catch before a
+  publish rather than after one.
+
 ## 0.2.0 — 2026-08-11
 
 The shipped model is retrained, and three of the four defects fixed here were

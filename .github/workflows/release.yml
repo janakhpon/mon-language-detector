@@ -1,0 +1,91 @@
+# Publishes to PyPI on a `v*` tag, via trusted publishing (OIDC) — no token to
+# store, leak or rotate.
+#
+# This is a FIRST publish: the project has never existed on PyPI, so this needs
+# a one-time setup on pypi.org before the first tag push, using the PENDING
+# publisher flow (a normal "add a GitHub publisher" cannot target a project
+# that does not exist yet):
+#
+#   pypi.org -> your account -> Publishing -> "Add a pending publisher"
+#     PyPI project name: mon-language-detector
+#     owner: janakhpon   repository: mon-language-detector
+#     workflow: release.yml   environment: pypi
+#
+# A pending publisher reserves nothing until it is actually used — if someone
+# else registers the name first, this one is invalidated, so do not delay this
+# step once the name is decided.
+#
+# THE TESTS RUN BEFORE THE PUBLISH, via the reused `ci.yml`, including the
+# `wheel` job that installs the built wheel into a clean environment and loads
+# the model from it. This repository's own audit finding H2 was a wheel that
+# shipped with no model at all, invisible to a source-tree test run.
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  # The same jobs that run on every pull request, re-run against the tagged
+  # commit. Reusing the workflow rather than copying the steps means the gate
+  # cannot drift from the checks it is supposed to be enforcing.
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    needs: ci
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    # Attach a protected environment named `pypi` in repository settings if you
+    # want a manual approval step before this leaves the machine — the last
+    # stop before something irreversible. GitHub creates the environment with
+    # no protection rules the first time this runs if it does not exist yet, so
+    # leaving this line in is safe either way.
+    environment: pypi
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
+      - run: uv build --no-sources
+
+      - name: the tag must match the version being published
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          VERSION=$(uv version --short)
+          if [ "$TAG" != "$VERSION" ]; then
+            echo "tag v$TAG does not match pyproject.toml version $VERSION"
+            exit 1
+          fi
+          echo "publishing $VERSION"
+
+      # The model ships inside the package (H2), so a distribution that omits it
+      # is the specific defect this check exists to catch one more time, on the
+      # exact artifact about to be uploaded — the `wheel` job above tests a
+      # wheel built on a different runner, not this one.
+      - name: the distribution carries the model
+        run: |
+          set -euo pipefail
+          found="$(python3 -m zipfile -l dist/*.whl | grep -c 'langid_mon_mya_eng_compressed.ftz' || true)"
+          if [ "$found" -eq 0 ]; then
+            echo "::error title=Model missing from wheel::dist/*.whl contains no .ftz model"
+            exit 1
+          fi
+          echo "model present in the wheel"
+
+      - name: Publish
+        run: |
+          set +e
+          output="$(uv publish --trusted-publishing always 2>&1)"
+          status=$?
+          set -e
+          printf '%s\n' "$output"
+          if [ "$status" -ne 0 ]; then
+            detail="$(printf '%s\n' "$output" | tail -25 | sed 's/%/%25/g; s/\r//g' | awk '{printf "%s%%0A", $0}')"
+            echo "::error title=uv publish failed::${detail}"
+            exit "$status"
+          fi
