@@ -54,7 +54,7 @@ MIN_RELIABLE_LEN = 11
 # expensive — that first trade is worth making and the second is not.
 #
 # **This threshold was selected on the same split it is scored on**, because
-# there is no held-out test set (AUDIT-2026-08-08, Medium). The reported 0.9980
+# there is no held-out test set. The reported 0.9980
 # is therefore optimistic by an unknown margin. One threshold chosen off a smooth
 # monotone curve is close to the mildest form that bias takes, but it is not zero
 # and the number should be read with that attached.
