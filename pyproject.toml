@@ -1,12 +1,18 @@
 [project]
 name = "mon-language-detector"
-version = "0.2.1"
+version = "0.2.2"
 description = "High-performance Mon/Burmese/English language detector with mixed-language categorization."
 readme = "README.md"
 authors = [
     { name = "janakhpon", email = "jnovaxer@gmail.com" }
 ]
-requires-python = ">=3.11"
+# Capped below 3.13, and the cap is measured rather than cautious. Both C
+# dependencies stop at cp312: fasttext-wheel 0.9.2 publishes no cp313 wheel
+# (cp27-cp312 plus an sdist) and numpy 1.26.4 publishes none either. On 3.13 a
+# resolve therefore falls back to compiling both from source, which succeeds on a
+# developer machine with a toolchain and fails on a clean runner. Declaring the
+# cap makes pip refuse the install instead of starting a build that breaks.
+requires-python = ">=3.11,<3.13"
 # What `LanguageDetector` actually imports, and nothing else. It was five, so a
 # `pip install` for an 8 MB language detector pulled pandas and pyarrow — over
 # 100 MB of wheels for a `wrangle` CLI that has nothing to do with detection.

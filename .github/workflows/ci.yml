@@ -23,10 +23,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The package claims 3.11+. fasttext-wheel is a C extension pinned to the
-        # numpy 1.x ABI, so per-version wheel availability is exactly where this
-        # breaks, and the matrix is the only thing that would say so.
-        python-version: ["3.11", "3.12", "3.13"]
+        # The matrix did its job: it reported 3.13 failing at `uv sync` while
+        # 3.11 and 3.12 passed. fasttext-wheel 0.9.2 publishes no cp313 wheel and
+        # neither does numpy 1.26.4, so 3.13 fell back to a source build. The
+        # package now declares <3.13 and the matrix matches what it claims.
+        python-version: ["3.11", "3.12"]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1

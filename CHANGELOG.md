@@ -3,6 +3,15 @@
 Notable changes, newest first. Dates are when the work landed, not when it was
 released. Every number names what it measures.
 
+## 0.2.2 — 2026-09-04
+
+- **The package now declares `<3.13`, because it does not work there.** 0.2.1
+  advertised `>=3.11` while both C dependencies stop at cp312: `fasttext-wheel`
+  0.9.2 publishes wheels for cp27 to cp312 plus an sdist, and `numpy` 1.26.4 the
+  same. A 3.13 install therefore tried to compile both, which works on a machine
+  with a toolchain and fails on a clean one. CI had been red on 3.13 for this
+  reason; the matrix is now 3.11 and 3.12, matching what the package claims.
+
 ## 0.2.1 — 2026-09-04
 
 This is the first release on PyPI. `v0.2.0` was tagged on 2026-08-11 and never
