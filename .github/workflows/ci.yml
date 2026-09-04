@@ -10,9 +10,22 @@
 
 name: ci
 
+# NO BRANCH FILTER ON PUSH, and the filter that used to be here has a cost this
+# repository already paid. Restricted to [main], a branch got CI only while a
+# pull request was open on it: the last three commits on
+# release/2026-09-04/first-pypi-publish ran nothing at all, because PR #6 was
+# closed at an earlier commit and the pushes after it matched no trigger. One of
+# those commits is the fix to the Python floor that this file's own matrix comment
+# describes, so the change that made the matrix correct was never exercised by the
+# matrix. Work sat unverified in exactly the window where finding a break is
+# cheapest, and looked tested because a green run existed three commits back.
+#
+# The sibling monocr-onnx removed the same filter for the same reason and records
+# it in its test.yml. The cost is honest: a branch with an open pull request now
+# runs twice, once per event. Four short jobs, against a commit that otherwise
+# gets no verification at all.
 on:
   push:
-    branches: [main]
   pull_request:
   # Called by release.yml so a tag cannot publish without this passing.
   workflow_call:
