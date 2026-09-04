@@ -55,7 +55,7 @@ than implied to be resolved.
   has no authority to grant one.
 
 This is why nothing is published to PyPI or Hugging Face. The engineering is
-done; see `docs/NEXT_STEPS.md` §1.
+done; the licence is the blocker.
 
 ## Personal data
 

@@ -55,10 +55,9 @@ preview = "mon_language_detector.preview:main"
 line-length = 100
 target-version = "py311"
 # Markdown is excluded because `ruff format` reformats fenced ```python blocks,
-# and this repository's documentation quotes DEFECTIVE code as evidence. It
-# rewrote `docs/AUDIT-2026-08-08.md` on its first run, collapsing the deliberate
-# comment alignment that made the audit's evidence readable — a dated record
-# describes what was true then, and a formatter is not entitled to edit it.
+# and this repository's documentation quotes defective code as evidence. A
+# formatter that collapses the comment alignment in such an example destroys the
+# thing the example is showing.
 extend-exclude = ["*.md"]
 
 [tool.ruff.lint]

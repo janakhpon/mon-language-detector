@@ -114,5 +114,3 @@ states which sources are established and which are not.
 
 - [CHANGELOG.md](CHANGELOG.md) — what changed in each version, with the numbers
 - [LICENSE-MODEL.md](LICENSE-MODEL.md) — what the model was trained on, and under what terms
-- [docs/AUDIT-2026-08-08.md](docs/AUDIT-2026-08-08.md) — what was found, and which commit closed it
-- [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md) — what is left, and what is deliberately not being done
