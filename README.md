@@ -84,21 +84,21 @@ repetition.
 
 ## Install
 
-**Not on PyPI.** Install from git — the model is tracked in the repository, so it
-comes with the package:
+The model ships inside the wheel, so detection works straight after install with
+nothing further to download:
 
 ```bash
-pip install "git+https://github.com/janakhpon/mon-language-detector.git"
+pip install mon-language-detector
 ```
 
 The `wrangle` CLI needs the `[wrangle]` extra on top; detection does not:
 
 ```bash
-pip install "mon-language-detector[wrangle] @ git+https://github.com/janakhpon/mon-language-detector.git"
+pip install "mon-language-detector[wrangle]"
 ```
 
-PyPI publication is pending, and it is gated on the training corpus's licence
-rather than on the package — see [LICENSE-MODEL.md](LICENSE-MODEL.md).
+The model's training corpus carries terms the repository's MIT grant does not
+cover — see [LICENSE-MODEL.md](LICENSE-MODEL.md) before redistributing it.
 
 ## Deployment
 

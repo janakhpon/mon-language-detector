@@ -3,17 +3,18 @@
 Notable changes, newest first. Dates are when the work landed, not when it was
 released. Every number names what it measures.
 
-## 0.2.1 — 2026-09-03 (unreleased)
+## 0.2.1 — 2026-09-04
 
-Prepares the first PyPI release; nothing is published yet. `v0.2.0` was tagged
-on 2026-08-11 and never published, and that tag points at a commit whose README
-told readers to `pip install mon-language-detector` — a name PyPI still returns
-404 for. Rather than force-move a tag nobody installed from, this bumps the
-version and leaves `v0.2.0` where it is.
+This is the first release on PyPI. `v0.2.0` was tagged on 2026-08-11 and never
+published, and that tag points at a commit whose README told readers to
+`pip install mon-language-detector` — a name PyPI returned 404 for until now.
+The tag is left where it is rather than force-moved.
 
-Publishing needs a PyPI pending publisher registered for this repository and
-workflow, then a `v0.2.1` tag. Until both happen, this heading stays marked
-unreleased.
+The wheel was checked installed outside the source tree before upload: the 7.9 MB
+`.ftz` is inside it, and `LanguageDetector().predict` returns `mnw`, `eng` and
+`mya` correctly from site-packages — a wheel that imports cleanly while shipping
+no model is invisible to a source-tree test run, which is what the `wheel` CI job
+exists to catch before an upload rather than after one.
 
 - **Fixed the install instructions.** Replaced with the `git+https://` form
   that actually resolves, and added `LICENSE-MODEL.md` for the tracked 8 MB
