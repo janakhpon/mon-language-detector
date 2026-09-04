@@ -6,6 +6,36 @@ readme = "README.md"
 authors = [
     { name = "janakhpon", email = "jnovaxer@gmail.com" }
 ]
+keywords = ["mon", "burmese", "language-identification", "fasttext"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: Linguistic",
+]
+# NO `license` EXPRESSION, AND THAT IS THE DECISION RATHER THAN AN OMISSION.
+# Every sibling package here declares `license = "MIT"`; this one must not, and
+# the difference is what the two files below exist to explain.
+#
+# The MIT grant in LICENSE covers the SOFTWARE only, and says so in its first
+# paragraph. The wheel also ships the trained model at
+# src/mon_language_detector/data/langid_mon_mya_eng_compressed.ftz, which is a
+# derived work of a corpus this project neither collected nor owns: Mon
+# Wikipedia is 54.7% of the Mon class's raw bytes and is CC BY-SA 4.0, which is
+# copyleft, and a further 26.6% comes from an archive with no established
+# licence at all. A single `license = "MIT"` on the distribution would assert one
+# permissive grant over the whole artifact — waiving a ShareAlike obligation
+# this project cannot waive and issuing a permission it does not hold.
+#
+# `license-files` is the honest form: PEP 639 ships both documents in the wheel
+# and the sdist WITHOUT asserting an SPDX expression over the contents. A reader
+# gets the terms and the split; nothing claims the split away.
+license-files = ["LICENSE", "LICENSE-MODEL.md"]
 # Capped below 3.13, and the cap is measured rather than cautious. Both C
 # dependencies stop at cp312: fasttext-wheel 0.9.2 publishes no cp313 wheel
 # (cp27-cp312 plus an sdist) and numpy 1.26.4 publishes none either. On 3.13 a
@@ -24,6 +54,15 @@ dependencies = [
     "fasttext-wheel>=0.9.2",
     "numpy<2.0",
 ]
+
+# The PyPI card carried NO repository link, no issue tracker and no changelog
+# for both published versions, so the only route from the page to the source was
+# guessing the GitHub path. Every sibling package here has had this block since
+# its first release.
+[project.urls]
+Repository = "https://github.com/janakhpon/mon-language-detector"
+Changelog = "https://github.com/janakhpon/mon-language-detector/blob/main/CHANGELOG.md"
+Issues = "https://github.com/janakhpon/mon-language-detector/issues"
 
 [project.optional-dependencies]
 # `uv run wrangle` reads parquet, csv and tsv. Nothing else in the package does,
