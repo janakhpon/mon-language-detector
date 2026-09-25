@@ -225,3 +225,6 @@ datasets/**/*.txt
 datasets/**/*.csv
 datasets/**/*.tsv
 datasets/**/*.parquet
+
+# macOS
+.DS_Store
