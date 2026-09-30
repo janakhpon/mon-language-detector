@@ -3,6 +3,25 @@
 Notable changes, newest first. Dates are when the work landed, not when it was
 released. Every number names what it measures.
 
+## 0.2.3 — 2026-09-30
+
+Metadata and CI only; no code under `src/` changed. 0.2.2 was uploaded by hand
+before these landed, so its PyPI page carries none of the first three items.
+
+- **The PyPI card now links to the source.** `[project.urls]` adds Repository,
+  Changelog and Issues. Neither published version had any link, so the only route
+  from the page to the code was guessing the GitHub path (`466e872`).
+- **Trove classifiers and keywords are now published**: Beta status, Python 3.11
+  and 3.12, OS independent, and the language-identification topics (`466e872`).
+- **The distribution ships both licence documents without asserting one
+  licence.** `license-files` puts `LICENSE` and `LICENSE-MODEL.md` in the wheel
+  and sdist, and `license` is deliberately left unset: the MIT grant covers the
+  software only, and the bundled `.ftz` model derives from a corpus that includes
+  CC BY-SA 4.0 text (`466e872`).
+- **CI now runs on every push.** The `[main]` branch filter is removed, so a
+  branch without an open pull request is no longer left unverified; a branch with
+  one runs twice, once per event (`36a2790`).
+
 ## 0.2.2 — 2026-09-04
 
 - **The package now declares `<3.13`, because it does not work there.** 0.2.1
