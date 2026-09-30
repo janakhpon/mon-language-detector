@@ -17,7 +17,7 @@
 #
 # THE TESTS RUN BEFORE THE PUBLISH, via the reused `ci.yml`, including the
 # `wheel` job that installs the built wheel into a clean environment and loads
-# the model from it. This repository's own audit finding H2 was a wheel that
+# the model from it. An earlier defect here was a wheel that
 # shipped with no model at all, invisible to a source-tree test run.
 name: release
 

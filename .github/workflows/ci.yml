@@ -1,8 +1,8 @@
 # `make check` has been green all along and nothing but a person ever ran it.
 #
 # The gap this closes is specific: the model ships inside the package, resolved
-# through importlib.resources, and audit finding H2 was that the built wheel
-# contained no model at all. That is invisible to a test run against the source
+# through importlib.resources, and an earlier release defect was that the built
+# wheel contained no model at all. That is invisible to a test run against the source
 # tree — it only shows up when a wheel is built and installed somewhere else,
 # which is what the `wheel` job does.
 #
@@ -71,7 +71,7 @@ jobs:
       - name: the model is inside the wheel
         run: |
           python -m zipfile -l dist/*.whl | grep -q 'langid_mon_mya_eng_compressed.ftz' \
-            || { echo "the wheel contains no model — audit H2"; exit 1; }
+            || { echo "the wheel contains no model"; exit 1; }
       - name: it loads from an install, not from the source tree
         run: |
           uv venv /tmp/fresh

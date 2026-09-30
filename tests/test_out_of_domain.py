@@ -96,7 +96,7 @@ def test_mon_evidence_outweighs_a_borrowed_shan_word(detector):
 
 
 # ---------------------------------------------------------------------------
-# basis — audit finding H1
+# basis — confidence provenance
 # ---------------------------------------------------------------------------
 
 

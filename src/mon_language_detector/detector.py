@@ -62,7 +62,7 @@ def _unicode_name(cp: int) -> str:
 # set, and borrowing one list for the other is how a Burmese letter gets called
 # Mon.
 #
-# U+1035 is arguable, and a sibling repository argues the other side. mon_OCR's
+# U+1035 is arguable, and a sibling repository argues the other side. Its
 # corpus bucketer includes it — eleven codepoints, not ten — on a measurement
 # this repository has not made: **481,926 occurrences in 1,139,043 Mon lines,
 # and 0 in all 66,156 Burmese lines**, bucketed by that repo's own `bucket_of`
@@ -213,7 +213,7 @@ def script_ratios(text: str) -> tuple[int, float, float]:
     Shares are over script-bearing characters only. Digits, punctuation and
     whitespace are excluded because "1990" and "၁၉၉၀" say nothing about
     language — counting them once made every numeric table row score as English
-    at full confidence (audit C1).
+    at full confidence.
 
     Public because `pipeline.py` needs the same three numbers to decide whether a
     corpus line may train a single-language class, and two implementations of
@@ -252,7 +252,7 @@ class Detection(NamedTuple):
     confidence: float
     reliable: bool
 
-    # What KIND of number `confidence` is. Audit finding H1, and the reason it
+    # What KIND of number `confidence` is. A reported ambiguity, and the reason it
     # stayed open: `confidence` is a fastText posterior on one path and a
     # hand-chosen 0.95 or 0.85 on another, so a caller thresholding at 0.9 was
     # selecting for branch rather than for certainty and had no way to tell.

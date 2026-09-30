@@ -5,7 +5,8 @@ released. Every number names what it measures.
 
 ## 0.2.3 — 2026-09-30
 
-Metadata and CI only; no code under `src/` changed. 0.2.2 was uploaded by hand
+Metadata and CI only; no code under `src/` changed (comments were reworded).
+0.2.2 was uploaded by hand
 before these landed, so its PyPI page carries none of the first three items.
 
 - **The PyPI card now links to the source.** `[project.urls]` adds Repository,
@@ -21,6 +22,8 @@ before these landed, so its PyPI page carries none of the first three items.
 - **CI now runs on every push.** The `[main]` branch filter is removed, so a
   branch without an open pull request is no longer left unverified; a branch with
   one runs twice, once per event (`36a2790`).
+- **Source comments no longer name private repositories.** Comments and
+  docstrings only; no behaviour changed.
 
 ## 0.2.2 — 2026-09-04
 
@@ -49,15 +52,15 @@ exists to catch before an upload rather than after one.
   `.ftz` model, which the repository's MIT grant never covered (`8094e07`).
 - **Corrected the reliable-accuracy figure** a threshold change had moved
   without a matching doc update (`15e2b59`).
-- **Documented the U+1035 disagreement with `mon_OCR`'s corpus bucketer**,
+- **Documented the U+1035 disagreement with a sibling corpus bucketer**,
   including a re-derivation of the figures after they were found quoted stale
   from a prior measurement (`1fbf746`, `0c18fed`). `MON_EXCLUSIVE_CODEPOINTS`
   itself is unchanged — ten codepoints, derived from Unicode names carrying
   MON as a word — the correction is entirely in what the surrounding comment
   claims about a codepoint deliberately left out of that set.
 - **Added `release.yml`.** Trusted publishing (OIDC), gated on the same `ci`
-  and `wheel` jobs every pull request runs — this repository's own audit
-  finding H2 was a wheel shipping without its model, invisible to a source-tree
+  and `wheel` jobs every pull request runs — an earlier defect in this
+  repository was a wheel shipping without its model, invisible to a source-tree
   test run, which is exactly what the `wheel` job exists to catch before a
   publish rather than after one.
 
@@ -108,7 +111,7 @@ found by auditing the character rules rather than by a failing test.
 ### Added
 
 - `Detection.basis` — whether `confidence` is a model posterior or a
-  hand-chosen constant. Closes audit finding H1. Appended with a default, so the
+  hand-chosen constant. Closes a reported ambiguity in `confidence`. Appended with a default, so the
   three-field shape still unpacks.
 - `uv run evaluate` — scores the detector rather than the raw classifier. The
   two differ by more than two points, and the README quotes this one.
