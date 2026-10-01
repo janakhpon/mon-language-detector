@@ -3,11 +3,11 @@
 Notable changes, newest first. Dates are when the work landed, not when it was
 released. Every number names what it measures.
 
-## 0.2.3 — 2026-09-30
+## 0.2.3 — 2026-10-01
 
-Metadata and CI only; no code under `src/` changed (comments were reworded).
-0.2.2 was uploaded by hand
-before these landed, so its PyPI page carries none of the first three items.
+Metadata, CI and documentation only; no code under `src/` changed (comments
+were reworded). 0.2.2 was uploaded by hand before these landed, so its PyPI page
+carries none of the first three items.
 
 - **The PyPI card now links to the source.** `[project.urls]` adds Repository,
   Changelog and Issues. Neither published version had any link, so the only route
@@ -22,8 +22,17 @@ before these landed, so its PyPI page carries none of the first three items.
 - **CI now runs on every push.** The `[main]` branch filter is removed, so a
   branch without an open pull request is no longer left unverified; a branch with
   one runs twice, once per event (`36a2790`).
-- **Source comments no longer name private repositories.** Comments and
-  docstrings only; no behaviour changed.
+- **CI lints its own workflows and scans the history for secrets.** A `zizmor`
+  job (zizmor 1.30.1) and a `secrets` job (gitleaks 8.30.1, its download
+  checked against a pinned SHA-256, over the full history) run on every push and
+  before every publish. `ci.yml` now declares `contents: read`, and no checkout
+  keeps credentials.
+- **The README puts installation first and its links work on PyPI.** Links to
+  `LICENSE-MODEL.md` and this file are absolute, since relative links 404 on the
+  PyPI page. It also says what a caller loading the raw `.ftz` outside Python
+  loses: the normalization, the Unicode rules, the mixed labels and the
+  reliability flag are Python-only, and the normalization has to be repeated.
+- **Reworded source comments; no behaviour change.**
 
 ## 0.2.2 — 2026-09-04
 
@@ -67,7 +76,7 @@ exists to catch before an upload rather than after one.
 ## 0.2.0 — 2026-08-11
 
 The shipped model is retrained, and three of the four defects fixed here were
-found by auditing the character rules rather than by a failing test.
+found by re-checking the character rules rather than by a failing test.
 
 ### Model
 
