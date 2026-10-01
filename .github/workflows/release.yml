@@ -33,8 +33,17 @@ jobs:
   # The same jobs that run on every pull request, re-run against the tagged
   # commit. Reusing the workflow rather than copying the steps means the gate
   # cannot drift from the checks it is supposed to be enforcing.
+  #
+  # zizmor's self-repository audit asks for `$/.github/workflows/ci.yml`, the
+  # syntax GitHub added in July 2026. Its gain is for STEP-level `./` actions,
+  # which load from the checked-out workspace and so from whatever an earlier
+  # step wrote there. A job-level reusable-workflow call like this one already
+  # resolves to the caller's own commit, with no checkout involved. actionlint
+  # 1.7.12 also rejects `$/` as a malformed call, and a release workflow is
+  # the last place to adopt syntax that only a tag push can exercise. Revisit
+  # once actionlint accepts it.
   ci:
-    uses: ./.github/workflows/ci.yml
+    uses: ./.github/workflows/ci.yml # zizmor: ignore[self-repository] job-level call already pins to this commit; see above
 
   publish:
     needs: ci
@@ -50,6 +59,8 @@ jobs:
     environment: pypi
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
       - run: uv build --no-sources
 
