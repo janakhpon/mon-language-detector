@@ -97,7 +97,7 @@ def default_model_path() -> Path:
 
 
 def get_logger(name: str) -> logging.Logger:
-    """Return a logger with structured SE Brain compliant formatting."""
+    """Return a logger with structured formatting."""
     logger = logging.getLogger(name)
     if not logger.handlers:
         handler = logging.StreamHandler()
@@ -124,7 +124,7 @@ def clean_and_normalize(text: str) -> str:
 
     text = text.strip()
     try:
-        # Standard SE Brain constraints for Mon/Burmese scripts
+        # Normalization the training and evaluation pipelines also apply
         text = unicodedata.normalize("NFC", text)
         text = text.replace("\u200b", "")  # ZWSP
         text = text.replace("\u200c", "")  # ZWNJ
