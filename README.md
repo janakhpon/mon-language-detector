@@ -7,6 +7,20 @@ fastText over character n-grams, with Unicode rules on top: Mon-exclusive
 characters override the model, other Myanmar-script languages are refused, and
 every result carries a reliability flag.
 
+## Install
+
+```bash
+pip install mon-language-detector
+```
+
+Python 3.11 or 3.12. The model ships inside the wheel, so detection works straight
+after install with nothing further to download. The `wrangle` CLI needs an extra;
+detection does not:
+
+```bash
+pip install "mon-language-detector[wrangle]"
+```
+
 ## Use
 
 ```python
@@ -14,14 +28,15 @@ from mon_language_detector import LanguageDetector
 
 detector = LanguageDetector()
 result = detector.predict("ပ္ဍဲသၞာံ ၁၉၉၀")
+# Detection(label='mnw', confidence=1.0, reliable=True, basis='posterior')
 
 if result.reliable and result.label.startswith("mnw"):
     keep(result)
 ```
 
-`result.basis` says where `confidence` came from — `posterior`,
-`mon-exclusive`, `other-myanmar-script`, `ambiguous-myanmar`, `too-short`,
-`no-script` or `empty`. Threshold on `reliable`, not on `confidence`.
+Threshold on `reliable`, not on `confidence`. `result.basis` says where
+`confidence` came from: `posterior`, `mon-exclusive`, `other-myanmar-script`,
+`ambiguous-myanmar`, `too-short`, `no-script` or `empty`.
 
 | Label | Meaning |
 | :--- | :--- |
@@ -30,10 +45,13 @@ if result.reliable and result.label.startswith("mnw"):
 | `mnw-mya` | Myanmar script, too short to tell which |
 | `unknown` | Empty, no script, or another Myanmar-script language |
 
+The bundled model is a standard quantized fastText `.ftz`, so other fastText
+loaders can read it. The Unicode rules and the reliability flag are Python-only,
+and the figures below include them.
+
 ## Accuracy
 
-Retrained 2026-08-11. `make evaluate` reproduces these, once a split exists —
-`data/` is not in the repository, so build one first (below).
+Retrained 2026-08-11, scored on the detector rather than the raw model.
 
 | | |
 |---|---|
@@ -49,19 +67,29 @@ the one that describes the workload.
 Every remaining error is Mon against Burmese, and it is a length problem: 97.7%
 of them are in lines of 40 characters or fewer. Lines carrying a Mon-exclusive
 character had none. `MIN_UNAMBIGUOUS_MYANMAR_LEN` is set at 30 on that evidence,
-tuned on the split it is scored on — so 0.9980 is optimistic by an unknown
-margin.
+tuned on the split it is scored on, so 0.9980 is optimistic by an unknown margin.
 
 ## What it cannot do
 
 Three classes, and the Myanmar script is shared by more. Shan, Khamti, Aiton,
 Karen and Palaung have nowhere to land, and a Mon scrape collects them.
 
-Text carrying a character exclusive to one of those languages now returns
-`unknown`. That covers the ones a character can prove; Shan written without them
-is still labelled Mon. A fourth class needs Shan data nobody has.
+Text carrying a character exclusive to one of those languages returns `unknown`.
+That covers the ones a character can prove; Shan written without them is still
+labelled Mon. A fourth class needs Shan data nobody has.
+
+## Licence
+
+MIT for the code. The bundled model is a derived work of a corpus with mixed and
+partly unresolved terms, and MIT does not reach it.
+[LICENSE-MODEL.md](https://github.com/janakhpon/mon-language-detector/blob/main/LICENSE-MODEL.md)
+states which sources are established and which are not; read it before
+redistributing the model.
 
 ## Building a model
+
+From a checkout. `data/` and the corpus are not in the repository, so
+`uv run evaluate` reproduces the figures above only after these steps:
 
 ```bash
 uv run datasets --explain                      # what the selection keeps and drops
@@ -82,35 +110,5 @@ repetition.
 `uv run wrangle` cleans raw files first. `uv run preview` spot-checks a model.
 `make check` runs ruff, mypy and the tests.
 
-## Install
-
-The model ships inside the wheel, so detection works straight after install with
-nothing further to download:
-
-```bash
-pip install mon-language-detector
-```
-
-The `wrangle` CLI needs the `[wrangle]` extra on top; detection does not:
-
-```bash
-pip install "mon-language-detector[wrangle]"
-```
-
-The model's training corpus carries terms the repository's MIT grant does not
-cover — see [LICENSE-MODEL.md](LICENSE-MODEL.md) before redistributing it.
-
-## Deployment
-
-The `.ftz` works with the standard fastText bindings on Android, iOS and WASM.
-
-## Licence
-
-MIT for the code. The shipped model is a derived work of a corpus with mixed and
-partly unresolved terms, and MIT does not reach it — [LICENSE-MODEL.md](LICENSE-MODEL.md)
-states which sources are established and which are not.
-
-## Documents
-
-- [CHANGELOG.md](CHANGELOG.md) — what changed in each version, with the numbers
-- [LICENSE-MODEL.md](LICENSE-MODEL.md) — what the model was trained on, and under what terms
+Changes and the numbers behind each release are in
+[CHANGELOG.md](https://github.com/janakhpon/mon-language-detector/blob/main/CHANGELOG.md).
