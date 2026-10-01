@@ -59,7 +59,7 @@ jobs:
 
   wheel:
     # Installs the built wheel into a clean environment and loads the model from
-    # it. H2 shipped a wheel with no model in it and every test still passed,
+    # it. A wheel was once built with no model in it and every test still passed,
     # because an editable install resolved the path back into the checkout.
     runs-on: ubuntu-latest
     steps:

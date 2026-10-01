@@ -63,7 +63,7 @@ jobs:
           fi
           echo "publishing $VERSION"
 
-      # The model ships inside the package (H2), so a distribution that omits it
+      # The model ships inside the package, so a distribution that omits it
       # is the specific defect this check exists to catch one more time, on the
       # exact artifact about to be uploaded — the `wheel` job above tests a
       # wheel built on a different runner, not this one.
