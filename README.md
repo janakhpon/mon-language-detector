@@ -75,7 +75,7 @@ tuned on the split it is scored on, so 0.9980 is optimistic by an unknown margin
 ## What it cannot do
 
 Three classes, and the Myanmar script is shared by more. Shan, Khamti, Aiton,
-Karen and Palaung have nowhere to land, and a Mon scrape collects them.
+Karen, Palaung and Tai Laing have nowhere to land, and a Mon scrape collects them.
 
 Text carrying a character exclusive to one of those languages returns `unknown`.
 That covers the ones a character can prove; Shan written without them is still

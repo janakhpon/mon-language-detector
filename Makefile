@@ -3,8 +3,8 @@
 install:
 	uv sync --group dev --extra wrangle
 
-# The read-only gate. There is no CI, so `main` is only as good as the last time
-# someone ran this.
+# The read-only gate. CI (.github/workflows/ci.yml) runs the same four steps on
+# every push.
 #
 # `format --check`, not `format`. `fix` is the mutating counterpart: a gate that
 # rewrites files to make itself pass cannot fail on a formatting problem, which
