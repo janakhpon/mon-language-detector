@@ -45,13 +45,16 @@ Threshold on `reliable`, not on `confidence`. `result.basis` says where
 | `mnw-mya` | Myanmar script, too short to tell which |
 | `unknown` | Empty, no script, or another Myanmar-script language |
 
-The bundled model is a standard quantized fastText `.ftz`, so other fastText
-loaders can read it. The Unicode rules and the reliability flag are Python-only,
-and the figures below include them.
+The bundled model, `mon_language_detector/data/langid_mon_mya_eng_compressed.ftz`,
+is a standard quantized fastText file, so other fastText loaders can read it. On
+its own it returns only `__label__mnw`, `__label__mya` and `__label__eng`. The
+text normalization (NFC, zero-width characters stripped, whitespace collapsed),
+the Unicode rules, the mixed labels and the reliability flag are all Python-only;
+repeat the normalization before calling the raw model elsewhere.
 
 ## Accuracy
 
-Retrained 2026-08-11, scored on the detector rather than the raw model.
+Retrained 2026-08-11. Scored on the detector, rules included, not the raw model.
 
 | | |
 |---|---|
