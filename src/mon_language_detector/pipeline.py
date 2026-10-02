@@ -42,7 +42,7 @@ def _script_dominant(text: str, is_own_script: Callable[[str], bool]) -> bool:
 
     Digits, punctuation and whitespace are excluded, because "၁၉၉၀" and "1990"
     say nothing about language and counting them once made every numeric table
-    row score as English (audit C1).
+    row score as English.
     """
     scripted = [c for c in text if _is_script_bearing(c)]
     if not scripted:

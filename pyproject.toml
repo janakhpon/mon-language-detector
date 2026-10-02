@@ -1,6 +1,6 @@
 [project]
 name = "mon-language-detector"
-version = "0.2.2"
+version = "0.2.3"
 description = "High-performance Mon/Burmese/English language detector with mixed-language categorization."
 readme = "README.md"
 authors = [
@@ -55,10 +55,8 @@ dependencies = [
     "numpy<2.0",
 ]
 
-# The PyPI card carried NO repository link, no issue tracker and no changelog
-# for both published versions, so the only route from the page to the source was
-# guessing the GitHub path. Every sibling package here has had this block since
-# its first release.
+# The links the PyPI page shows. Without them the only route from the page to
+# the source is guessing the GitHub path.
 [project.urls]
 Repository = "https://github.com/janakhpon/mon-language-detector"
 Changelog = "https://github.com/janakhpon/mon-language-detector/blob/main/CHANGELOG.md"
@@ -92,10 +90,8 @@ train = "mon_language_detector.train:main"
 evaluate = "mon_language_detector.evaluate:main"
 preview = "mon_language_detector.preview:main"
 
-# The linters were run ad hoc and declared nowhere, so the debt was invisible:
-# 97 findings under this ruleset on a 1,088-line repository, none of them
-# reported by any command anyone was expected to run. `make check` is now that
-# command.
+# Linters are declared here and run by `make check`, the one gate for a change;
+# CI runs the same steps. A linter that no command runs reports nothing.
 [tool.ruff]
 line-length = 100
 target-version = "py311"

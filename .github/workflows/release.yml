@@ -1,23 +1,17 @@
 # Publishes to PyPI on a `v*` tag, via trusted publishing (OIDC) — no token to
 # store, leak or rotate.
 #
-# This is a FIRST publish: the project has never existed on PyPI, so this needs
-# a one-time setup on pypi.org before the first tag push, using the PENDING
-# publisher flow (a normal "add a GitHub publisher" cannot target a project
-# that does not exist yet):
+# Needs a trusted publisher on pypi.org before a tag push. The project already
+# exists there, so the publisher is added from the project's own settings, not
+# as a pending publisher:
 #
-#   pypi.org -> your account -> Publishing -> "Add a pending publisher"
-#     PyPI project name: mon-language-detector
+#   pypi.org -> mon-language-detector -> Manage -> Publishing -> add a GitHub publisher
 #     owner: janakhpon   repository: mon-language-detector
 #     workflow: release.yml   environment: pypi
 #
-# A pending publisher reserves nothing until it is actually used — if someone
-# else registers the name first, this one is invalidated, so do not delay this
-# step once the name is decided.
-#
 # THE TESTS RUN BEFORE THE PUBLISH, via the reused `ci.yml`, including the
 # `wheel` job that installs the built wheel into a clean environment and loads
-# the model from it. This repository's own audit finding H2 was a wheel that
+# the model from it. An earlier defect here was a wheel that
 # shipped with no model at all, invisible to a source-tree test run.
 name: release
 
@@ -33,8 +27,17 @@ jobs:
   # The same jobs that run on every pull request, re-run against the tagged
   # commit. Reusing the workflow rather than copying the steps means the gate
   # cannot drift from the checks it is supposed to be enforcing.
+  #
+  # zizmor's self-repository audit asks for `$/.github/workflows/ci.yml`, the
+  # syntax GitHub added in July 2026. Its gain is for STEP-level `./` actions,
+  # which load from the checked-out workspace and so from whatever an earlier
+  # step wrote there. A job-level reusable-workflow call like this one already
+  # resolves to the caller's own commit, with no checkout involved. actionlint
+  # 1.7.12 also rejects `$/` as a malformed call, and a release workflow is
+  # the last place to adopt syntax that only a tag push can exercise. Revisit
+  # once actionlint accepts it.
   ci:
-    uses: ./.github/workflows/ci.yml
+    uses: ./.github/workflows/ci.yml # zizmor: ignore[self-repository] job-level call already pins to this commit; see above
 
   publish:
     needs: ci
@@ -50,6 +53,8 @@ jobs:
     environment: pypi
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
       - run: uv build --no-sources
 
@@ -63,7 +68,7 @@ jobs:
           fi
           echo "publishing $VERSION"
 
-      # The model ships inside the package (H2), so a distribution that omits it
+      # The model ships inside the package, so a distribution that omits it
       # is the specific defect this check exists to catch one more time, on the
       # exact artifact about to be uploaded — the `wheel` job above tests a
       # wheel built on a different runner, not this one.

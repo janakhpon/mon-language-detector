@@ -96,14 +96,14 @@ def test_mon_evidence_outweighs_a_borrowed_shan_word(detector):
 
 
 # ---------------------------------------------------------------------------
-# basis — audit finding H1
+# basis — confidence provenance
 # ---------------------------------------------------------------------------
 
 
 def test_a_posterior_and_a_constant_are_distinguishable(detector):
-    """H1: `confidence` was a fastText probability on one path and a hand-chosen
-    0.95 or 0.85 on another, with nothing to tell them apart. A caller
-    thresholding at 0.9 was selecting for branch, not for certainty."""
+    """`confidence` used to be a fastText probability on one path and a
+    hand-chosen 0.95 or 0.85 on another, with nothing to tell them apart. A
+    caller thresholding at 0.9 was selecting for branch, not for certainty."""
     assert detector.predict(ENGLISH).basis == "posterior"
     # Under five characters with a Mon-exclusive character: the 0.95 literal.
     short_mon = detector.predict("ၚ")

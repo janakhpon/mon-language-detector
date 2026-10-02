@@ -1,8 +1,8 @@
 # `make check` has been green all along and nothing but a person ever ran it.
 #
 # The gap this closes is specific: the model ships inside the package, resolved
-# through importlib.resources, and audit finding H2 was that the built wheel
-# contained no model at all. That is invisible to a test run against the source
+# through importlib.resources, and an earlier release defect was that the built
+# wheel contained no model at all. That is invisible to a test run against the source
 # tree — it only shows up when a wheel is built and installed somewhere else,
 # which is what the `wheel` job does.
 #
@@ -10,25 +10,23 @@
 
 name: ci
 
-# NO BRANCH FILTER ON PUSH, and the filter that used to be here has a cost this
-# repository already paid. Restricted to [main], a branch got CI only while a
-# pull request was open on it: the last three commits on
-# release/2026-09-04/first-pypi-publish ran nothing at all, because PR #6 was
-# closed at an earlier commit and the pushes after it matched no trigger. One of
-# those commits is the fix to the Python floor that this file's own matrix comment
-# describes, so the change that made the matrix correct was never exercised by the
-# matrix. Work sat unverified in exactly the window where finding a break is
-# cheapest, and looked tested because a green run existed three commits back.
-#
-# The sibling monocr-onnx removed the same filter for the same reason and records
-# it in its test.yml. The cost is honest: a branch with an open pull request now
-# runs twice, once per event. Four short jobs, against a commit that otherwise
-# gets no verification at all.
+# No push branch filter: a branch without an open PR would otherwise get no CI.
+# The cost is that a branch with an open pull request runs twice, once per event.
 on:
   push:
   pull_request:
   # Called by release.yml so a tag cannot publish without this passing.
   workflow_call:
+
+# Declared, where this file previously declared nothing and inherited the
+# repository default. That default is a repository setting, not a property of
+# this file: set to read-write, every job here would hold a GITHUB_TOKEN that
+# can push commits and move tags, on a workflow that runs on `push` from any
+# branch. Every job here checks out, builds, tests or scans; none writes. When
+# release.yml calls this file the caller's grant is the ceiling anyway, and it
+# is also `contents: read` for the `ci` job.
+permissions:
+  contents: read
 
 jobs:
   check:
@@ -43,6 +41,8 @@ jobs:
         python-version: ["3.11", "3.12"]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           python-version: ${{ matrix.python-version }}
@@ -59,11 +59,13 @@ jobs:
 
   wheel:
     # Installs the built wheel into a clean environment and loads the model from
-    # it. H2 shipped a wheel with no model in it and every test still passed,
+    # it. A wheel was once built with no model in it and every test still passed,
     # because an editable install resolved the path back into the checkout.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           python-version: "3.11"
@@ -71,7 +73,7 @@ jobs:
       - name: the model is inside the wheel
         run: |
           python -m zipfile -l dist/*.whl | grep -q 'langid_mon_mya_eng_compressed.ftz' \
-            || { echo "the wheel contains no model — audit H2"; exit 1; }
+            || { echo "the wheel contains no model"; exit 1; }
       - name: it loads from an install, not from the source tree
         run: |
           uv venv /tmp/fresh
@@ -91,3 +93,84 @@ jobs:
           assert not heavy, f'detector pulled in {heavy}'
           print('detector imports no heavy optional dependency')
           "
+
+  # Lints every workflow in this repository for the defects that turn CI into
+  # a way in: unpinned actions, credentials persisted into the workspace,
+  # caches restored into publish jobs, template injection, over-broad tokens.
+  # release.yml's publish job holds `id-token: write` for PyPI, so a defect
+  # there is a defect in what gets published under this project's name. Both
+  # this job and `secrets` also run when release.yml calls this file, so a tag
+  # cannot publish past either of them.
+  #
+  # Scans the repository root (the action's default input, `.`), not only
+  # .github/workflows, so the CI gate and a local run cover the same files.
+  # Reproduce locally with:  uvx zizmor@1.30.1 --offline .
+  # The local run skips the online audits; this job runs them.
+  #
+  # `advanced-security: false` because uploading SARIF needs
+  # `security-events: write`, and results as annotations are readable by anyone
+  # who can see the run — the job log is not.
+  zizmor:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Lint the workflows
+        uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4
+        with:
+          version: 1.30.1
+          advanced-security: false
+          annotations: true
+
+  # Scans the full git history for committed credentials, not just the tree: a
+  # secret removed in a later commit is still in every clone. fetch-depth 0 is
+  # what makes the history available to scan.
+  #
+  # The gitleaks binary, not gitleaks-action: the action needs a paid licence
+  # once a repository is organization-owned, and the binary needs no token at
+  # all. Pinned to a version AND the SHA-256 of its
+  # release tarball, from the release's gitleaks_8.30.1_checksums.txt, so the
+  # URL cannot serve something else on a later day. TO BUMP: take the
+  # linux_x64 line from the new release's checksums file and verify it against
+  # a download before changing either value.
+  #
+  # `--redact` keeps any secret it finds out of the log. A finding is
+  # annotated as file and line only.
+  secrets:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install gitleaks
+        env:
+          GITLEAKS_VERSION: 8.30.1
+          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        run: |
+          set -euo pipefail
+          curl -sSfL -o "${RUNNER_TEMP}/gitleaks.tar.gz" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  ${RUNNER_TEMP}/gitleaks.tar.gz" | sha256sum -c -
+          tar -xz -C "${RUNNER_TEMP}" -f "${RUNNER_TEMP}/gitleaks.tar.gz" gitleaks
+          "${RUNNER_TEMP}/gitleaks" version
+      - name: Scan the full history for secrets
+        run: |
+          set -euo pipefail
+          report="${RUNNER_TEMP}/gitleaks.json"
+          set +e
+          "${RUNNER_TEMP}/gitleaks" git --redact --verbose --no-banner --no-color \
+            --report-format json --report-path "$report" .
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            if [ -s "$report" ]; then
+              jq -r '.[] | "::error file=\(.File),line=\(.StartLine),title=gitleaks: \(.RuleID)::commit \(.Commit[0:12])"' "$report"
+            fi
+            exit "$status"
+          fi

@@ -3,6 +3,37 @@
 Notable changes, newest first. Dates are when the work landed, not when it was
 released. Every number names what it measures.
 
+## 0.2.3 — 2026-10-01
+
+Metadata, CI and documentation only; no code under `src/` changed (comments
+were reworded). 0.2.2 was uploaded by hand before these landed, so its PyPI page
+carries none of the first three items.
+
+- **The PyPI card now links to the source.** `[project.urls]` adds Repository,
+  Changelog and Issues. Neither published version had any link, so the only route
+  from the page to the code was guessing the GitHub path (`466e872`).
+- **Trove classifiers and keywords are now published**: Beta status, Python 3.11
+  and 3.12, OS independent, and the language-identification topics (`466e872`).
+- **The distribution ships both licence documents without asserting one
+  licence.** `license-files` puts `LICENSE` and `LICENSE-MODEL.md` in the wheel
+  and sdist, and `license` is deliberately left unset: the MIT grant covers the
+  software only, and the bundled `.ftz` model derives from a corpus that includes
+  CC BY-SA 4.0 text (`466e872`).
+- **CI now runs on every push.** The `[main]` branch filter is removed, so a
+  branch without an open pull request is no longer left unverified; a branch with
+  one runs twice, once per event (`36a2790`).
+- **CI lints its own workflows and scans the history for secrets.** A `zizmor`
+  job (zizmor 1.30.1) and a `secrets` job (gitleaks 8.30.1, its download
+  checked against a pinned SHA-256, over the full history) run on every push and
+  before every publish. `ci.yml` now declares `contents: read`, and no checkout
+  keeps credentials.
+- **The README puts installation first and its links work on PyPI.** Links to
+  `LICENSE-MODEL.md` and this file are absolute, since relative links 404 on the
+  PyPI page. It also says what a caller loading the raw `.ftz` outside Python
+  loses: the normalization, the Unicode rules, the mixed labels and the
+  reliability flag are Python-only, and the normalization has to be repeated.
+- **Reworded source comments; no behaviour change.**
+
 ## 0.2.2 — 2026-09-04
 
 - **The package now declares `<3.13`, because it does not work there.** 0.2.1
@@ -30,22 +61,22 @@ exists to catch before an upload rather than after one.
   `.ftz` model, which the repository's MIT grant never covered (`8094e07`).
 - **Corrected the reliable-accuracy figure** a threshold change had moved
   without a matching doc update (`15e2b59`).
-- **Documented the U+1035 disagreement with `mon_OCR`'s corpus bucketer**,
+- **Documented the U+1035 disagreement with a sibling corpus bucketer**,
   including a re-derivation of the figures after they were found quoted stale
   from a prior measurement (`1fbf746`, `0c18fed`). `MON_EXCLUSIVE_CODEPOINTS`
   itself is unchanged — ten codepoints, derived from Unicode names carrying
   MON as a word — the correction is entirely in what the surrounding comment
   claims about a codepoint deliberately left out of that set.
 - **Added `release.yml`.** Trusted publishing (OIDC), gated on the same `ci`
-  and `wheel` jobs every pull request runs — this repository's own audit
-  finding H2 was a wheel shipping without its model, invisible to a source-tree
+  and `wheel` jobs every pull request runs — an earlier defect in this
+  repository was a wheel shipping without its model, invisible to a source-tree
   test run, which is exactly what the `wheel` job exists to catch before a
   publish rather than after one.
 
 ## 0.2.0 — 2026-08-11
 
 The shipped model is retrained, and three of the four defects fixed here were
-found by auditing the character rules rather than by a failing test.
+found by re-checking the character rules rather than by a failing test.
 
 ### Model
 
@@ -89,7 +120,7 @@ found by auditing the character rules rather than by a failing test.
 ### Added
 
 - `Detection.basis` — whether `confidence` is a model posterior or a
-  hand-chosen constant. Closes audit finding H1. Appended with a default, so the
+  hand-chosen constant. Closes a reported ambiguity in `confidence`. Appended with a default, so the
   three-field shape still unpacks.
 - `uv run evaluate` — scores the detector rather than the raw classifier. The
   two differ by more than two points, and the README quotes this one.

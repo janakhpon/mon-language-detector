@@ -15,9 +15,8 @@ its training data, and that data has no single set of terms either.
 
 The corpus is not in this repository. `uv run datasets --corpus-root <path>`
 links it in, and `datasets.py` records which directories may train which class.
-The shipped artifact was fitted on 2026-08-11 against
-[MonOCR](https://github.com/MonDevHub/monocr)'s corpus at
-`data/raw/corpus/`.
+The shipped artifact was fitted on 2026-08-11 against the project's training
+corpus (not published).
 
 Shares below are **bytes of raw input**, before cleaning, deduplication and
 sampling. `wc -c datasets/mon/*.txt` gives the 131,687,389-byte denominator and
@@ -54,8 +53,9 @@ than implied to be resolved.
   and a quarter of the Mon input. No licence has been obtained and this project
   has no authority to grant one.
 
-This is why nothing is published to PyPI or Hugging Face. The engineering is
-done; the licence is the blocker.
+The package is on PyPI. From 0.2.3 its wheel and sdist carry this file and
+`LICENSE`, and its metadata declares no single licence. Publishing settles none
+of the questions above.
 
 ## Personal data
 

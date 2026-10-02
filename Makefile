@@ -3,8 +3,8 @@
 install:
 	uv sync --group dev --extra wrangle
 
-# The read-only gate. There is no CI, so `main` is only as good as the last time
-# someone ran this.
+# The read-only gate. CI (.github/workflows/ci.yml) runs the same four steps on
+# every push.
 #
 # `format --check`, not `format`. `fix` is the mutating counterpart: a gate that
 # rewrites files to make itself pass cannot fail on a formatting problem, which
@@ -31,7 +31,7 @@ format:
 
 # Corpus -> datasets/ -> labelled split -> model. Run in order.
 #
-# `datasets` is a SELECTION, not a copy: mon_OCR's corpus is bucketed for OCR,
+# `datasets` is a SELECTION, not a copy: a sibling corpus is bucketed for OCR,
 # where the label is the text, and four of its Mon directories are English or
 # Burmese by content. `uv run datasets --explain` prints what is dropped and why.
 # CORPUS_ROOT has no default: the corpus is not in this repository, and a

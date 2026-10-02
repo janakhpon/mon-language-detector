@@ -12,7 +12,7 @@ Mon finals / Mon vowels / Mon-specific signs / Mon asat / Mon Extensions block".
 Karen, Shan, Khamti, Aiton and Pao Karen — and three genuinely Mon-exclusive
 characters were missing entirely.
 
-Measured 2026-08-11 on `mon_OCR/data/raw/corpus` (4,792,030 Mon characters,
+Measured 2026-08-11 on the raw Mon/Burmese corpus (4,792,030 Mon characters,
 552,394 Burmese):
 
     U+1028 MYANMAR LETTER MON E                     360 in Mon, 0 in Burmese
