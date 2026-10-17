@@ -115,3 +115,10 @@ repetition.
 
 Changes and the numbers behind each release are in
 [CHANGELOG.md](https://github.com/janakhpon/mon-language-detector/blob/main/CHANGELOG.md).
+
+## Related
+
+- [MonCorpusCollection](https://github.com/MonDevHub/MonCorpusCollection) — the Mon text corpus
+- [mon-tokenizer](https://github.com/Code-Yay-Mal/mon_tokenizer) — a tokenizer for Mon, Burmese and English
+- [monocr](https://github.com/MonDevHub/monocr) — the Mon OCR apps
+- [awesome-mon-nlp](https://github.com/MonDevHub/awesome-mon-nlp) — the wider Mon NLP ecosystem

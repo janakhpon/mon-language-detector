@@ -1,7 +1,7 @@
 [project]
 name = "mon-language-detector"
 version = "0.2.3"
-description = "High-performance Mon/Burmese/English language detector with mixed-language categorization."
+description = "Detects Mon (mnw), Burmese (mya) and English (eng), including mixed-script text, for filtering scraped corpora."
 readme = "README.md"
 authors = [
     { name = "janakhpon", email = "jnovaxer@gmail.com" }
