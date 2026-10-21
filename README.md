@@ -35,15 +35,16 @@ if result.reliable and result.label.startswith("mnw"):
 ```
 
 Threshold on `reliable`, not on `confidence`. `result.basis` says where
-`confidence` came from: `posterior`, `mon-exclusive`, `other-myanmar-script`,
-`ambiguous-myanmar`, `too-short`, `no-script` or `empty`.
+`confidence` came from: `posterior`, `mon-exclusive`, `zawgyi`,
+`other-myanmar-script`, `ambiguous-myanmar`, `too-short`, `no-script` or
+`empty`.
 
 | Label | Meaning |
 | :--- | :--- |
 | `mnw` `mya` `eng` | One language |
 | `mnw-eng` `mya-eng` | Mixed with English |
 | `mnw-mya` | Myanmar script, too short to tell which |
-| `unknown` | Empty, no script, or another Myanmar-script language |
+| `unknown` | Empty, no script, Zawgyi, or another Myanmar-script language |
 
 The bundled model, `mon_language_detector/data/langid_mon_mya_eng_compressed.ftz`,
 is a standard quantized fastText file, so other fastText loaders can read it. On
@@ -80,6 +81,19 @@ Karen, Palaung and Tai Laing have nowhere to land, and a Mon scrape collects the
 Text carrying a character exclusive to one of those languages returns `unknown`.
 That covers the ones a character can prove; Shan written without them is still
 labelled Mon. A fourth class needs Shan data nobody has.
+
+Zawgyi, the font encoding most Burmese was typed in before Unicode, returns
+`unknown` with basis `zawgyi`. So does Mon typed in a legacy font that stores
+text in Zawgyi's order. Zawgyi reuses four of the Mon-exclusive codepoints, so
+it used to come back as reliable `mnw`. The check reads storage order and needs
+two signals. On a Zawgyi conversion of 25,037 Burmese lines it catches 87.3%.
+Most misses are shorter than 30 characters, and 1.7% of the lines still come
+back as reliable `mnw`, down from 20.1%. It flags no well-formed Unicode Mon in
+211,685 corpus lines.
+
+Pali written in the Myanmar script has no class. Three standard Pali verses
+each come back as `mnw`, reliable, at confidence 0.9999 or more, so a Mon
+corpus filtered on `reliable` keeps Pali passages.
 
 ## Licence
 
