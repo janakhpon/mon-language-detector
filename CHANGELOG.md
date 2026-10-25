@@ -3,6 +3,42 @@
 Notable changes, newest first. Dates are when the work landed, not when it was
 released. Every number names what it measures.
 
+## 0.2.4 — unreleased
+
+- **Zawgyi text is refused instead of being called Mon.** Zawgyi, the
+  pre-Unicode Burmese font encoding, uses U+1033, U+1034, U+105A and U+1060 as
+  display forms, and all four are in `MON_EXCLUSIVE_CODEPOINTS`. So
+  `ျမန္မာႏိုင္ငံ ရန္ကုန္ၿမိဳ႕` came back `mnw` with `reliable=True`, and the
+  model agreed. A new check, `looks_like_zawgyi`, runs before every other rule.
+  It reads storage order, not codepoints. When it fires, `predict` returns
+  `unknown`, confidence 0.0, `reliable=False` and the new basis value
+  `zawgyi`.
+- **It is tuned to leave Unicode Mon alone, and measured on it.** Across
+  211,685 MonCorpusCollection lines that carry a Mon-exclusive character, it
+  flags 33. Thirty are Mon typed in a legacy font with Zawgyi's storage order,
+  1 is Zawgyi Burmese, and 2 mix encodings. None is well-formed Unicode Mon. It
+  flags none of 26,565 Unicode Burmese lines, and catches 21,852 (87.3%) of
+  the same lines converted to Zawgyi. On that converted set, reliable `mnw`
+  falls from 20.1% of lines to 1.7%. The misses are short: 2,689 of 3,185 are
+  under 30 characters.
+- **No new dependency.** Google's `myanmartools` 1.2.1 (Apache-2.0, a 29 KB
+  pure-Python wheel) was measured on the same lines. It catches 97.9% of the
+  converted Zawgyi, but it also flags 32 well-formed Unicode Mon lines, mostly
+  short dictionary entries. Its own README warns that rule-based detectors
+  flag Mon as Zawgyi; here the rule is the one that does not.
+- **The held-out evaluation is unchanged.** The report on all 34,988 lines is
+  identical before and after, because the check fires on none of them.
+  Detection is about 10% slower: 29,100 lines/s against 32,400 without the
+  check, on 20,000 held-out lines on one machine.
+- **The README now covers Zawgyi and Pali.** Its limitations section explains
+  what Zawgyi returns. It also says that Pali in the Myanmar script has no class
+  and comes back as reliable `mnw`.
+- **Measured and not adopted:** a rule that would mark a line unreliable when the
+  model says `mya` at 0.9 or more, the line is at least 30 characters long, and it
+  contains exactly one Mon-exclusive character. The held-out split has no such
+  line, so the rule's effect cannot be scored. In the Mon corpus, 307 of the
+  211,685 lines qualify, and 14 of a 15-line sample are Mon.
+
 ## 0.2.3 — 2026-10-01
 
 Metadata, CI and documentation only; no code under `src/` changed (comments

@@ -110,6 +110,11 @@ MON_EXCLUSIVE_CODEPOINTS: frozenset[int] = frozenset(
 _MON_EXCLUSIVE_RE = re.compile(f"[{''.join(chr(c) for c in sorted(MON_EXCLUSIVE_CODEPOINTS))}]")
 
 
+# Myanmar, Myanmar Extended-B and Myanmar Extended-A: the blocks every derived
+# set below is computed over, so there is one list of them.
+_MYANMAR_BLOCKS = (range(0x1000, 0x10A0), range(0xA9E0, 0xAA00), range(0xAA60, 0xAA80))
+
+
 # The other languages written in the Myanmar script, and the reason this model
 # needs a guard it did not have.
 #
@@ -139,7 +144,7 @@ _MON_EXCLUSIVE_RE = re.compile(f"[{''.join(chr(c) for c in sorted(MON_EXCLUSIVE_
 # for them is the correct answer rather than the cost.
 OTHER_MYANMAR_LANGUAGE_CODEPOINTS: frozenset[int] = frozenset(
     cp
-    for block in (range(0x1000, 0x10A0), range(0xA9E0, 0xAA00), range(0xAA60, 0xAA80))
+    for block in _MYANMAR_BLOCKS
     for cp in block
     for name in (_unicode_name(cp),)
     if name
@@ -150,6 +155,106 @@ OTHER_MYANMAR_LANGUAGE_CODEPOINTS: frozenset[int] = frozenset(
 _OTHER_MYANMAR_RE = re.compile(
     f"[{''.join(chr(c) for c in sorted(OTHER_MYANMAR_LANGUAGE_CODEPOINTS))}]"
 )
+
+
+# Zawgyi: the font encoding most Burmese text was typed in before Unicode, and
+# the reason a Burmese line could come back `mnw` with `reliable=True`.
+#
+# Zawgyi reuses Myanmar codepoints for display forms. Four of the ten in
+# MON_EXCLUSIVE_CODEPOINTS are among them: U+1033 and U+1034 are its tall
+# u and uu, U+105A its tall aa with asat, U+1060 its stacked ka. So Zawgyi
+# Burmese carries the hard Mon signal, and the model calls it Mon as well:
+#
+#     "ျမန္မာႏိုင္ငံ ရန္ကုန္ၿမိဳ႕"  -> mnw, 1.0000, reliable=True
+#
+# No single codepoint proves Zawgyi, because every one it uses is assigned to
+# something else in Unicode. What proves it is STORAGE ORDER. Zawgyi stores
+# text in the order it is drawn, Unicode in logical order, and three of the
+# differences are sequences well-formed Unicode never contains:
+#
+#   e_first       U+1031 before its consonant, with no letter or medial
+#                 in front of it to attach to.
+#   medial_first  U+103B before its consonant, the same way. In Zawgyi it is
+#                 the ra medial, drawn on the left.
+#   virama_final  U+1039 that ends a syllable. Zawgyi uses it as the asat;
+#                 in Unicode it only ever stacks the consonant after it.
+#
+# **The risk is Mon, so the rule was tuned on Mon.** Google's myanmar-tools
+# warns that rule-based detectors flag Mon and Shan Unicode as Zawgyi. Three
+# exclusions come straight from Mon text as it is actually typed:
+#
+#   - U+103A before U+1031 does not count as missing a base. Mon writes
+#     "တှ်ေ" that way thousands of times in the corpus measured below.
+#   - U+1039 after U+103A is not virama_final. "ၚ်္" / "င်္" is how Mon
+#     writes a kinzi-like final, and Zawgyi has its own kinzi codepoint.
+#   - virama_final counts only before what ends a Zawgyi syllable: end of
+#     text, a non-Myanmar character, a tone mark or a section mark. A stray
+#     U+1039 before a vowel sign is OCR damage, not Zawgyi.
+#
+# Codepoints U+1061-U+1097 add evidence without being evidence on their own.
+# Zawgyi uses them as glyph variants; in Unicode they are Shan, Karen and
+# others, and one quoted Burmese word typed in Zawgyi puts them inside Mon
+# text. So the gate is:
+#
+#     at least one storage-order signal,
+#     at least two signals counting the U+1061-U+1097 codepoints,
+#     and at least one that is not U+1031 alone.
+#
+# The third clause is for Unicode Mon typed with U+1031 first and nothing else
+# wrong. Measured 2026-10-21, against MonCorpusCollection and a
+# Unicode-to-Zawgyi conversion of Burmese, in lines of 15 characters or more:
+#
+#     211,685 Mon lines carrying a Mon-exclusive character  33 flagged
+#         31 are Zawgyi-encoded: 30 Mon typed in a Zawgyi-order legacy font,
+#            1 Burmese.
+#          2 are Mon in a mix of encodings no Unicode font renders either:
+#            one types U+103B for the asat, one mixes Zawgyi-order vowels
+#            and a Shan codepoint into Unicode.
+#          0 are well-formed Unicode Mon.
+#      26,565 Burmese Unicode lines                       0 flagged
+#      25,037 of those lines converted to Zawgyi      21,852 flagged (87.3%)
+#
+# The misses are short. 2,689 of the 3,185 are under 30 characters, where a
+# single Zawgyi syllable is the only evidence there is. Allowing one signal
+# would raise recall to 94.5% and flag 106 more Mon lines. Most of those are
+# Unicode Mon with one misplaced, doubled or substituted mark.
+#
+# myanmar-tools 1.2.1 was measured on the same lines and not adopted. It finds
+# 97.9% of the converted Zawgyi, and flags 61 of the Mon lines, of which 32
+# are well-formed Unicode Mon, mostly short dictionary entries.
+_ZAWGYI_BASE = re.escape(
+    "".join(
+        chr(cp)
+        for block in _MYANMAR_BLOCKS
+        for cp in block
+        if unicodedata.category(chr(cp)) == "Lo"
+    )
+    # Medials (Burmese, Mon, Shan) and U+103A ASAT, which Mon puts before U+1031.
+    + "\u103a\u103b\u103c\u103d\u103e\u105e\u105f\u1060\u1082"
+)
+_ZAWGYI_E_FIRST_RE = re.compile(f"(?:^|(?<=[^{_ZAWGYI_BASE}]))\u1031(?=[\u1000-\u1021])")
+_ZAWGYI_MEDIAL_FIRST_RE = re.compile(f"(?:^|(?<=[^{_ZAWGYI_BASE}]))\u103b(?=[\u1000-\u1021])")
+_ZAWGYI_VIRAMA_FINAL_RE = re.compile(
+    "(?<!\u103a)\u1039(?=$|[^\u1000-\u109f]|[\u1037\u1038\u104a\u104b\u1094\u1095])"
+)
+_ZAWGYI_GLYPH_RE = re.compile("[\u1061-\u1097]")
+
+
+def looks_like_zawgyi(text: str) -> bool:
+    """Whether `text` is stored in Zawgyi order rather than Unicode order.
+
+    `text` should already be through `clean_and_normalize`, as everything
+    `predict` sees is. See the comment above `_ZAWGYI_BASE` for the rule and
+    the measurement behind it.
+    """
+    e_first = len(_ZAWGYI_E_FIRST_RE.findall(text))
+    other_order = len(_ZAWGYI_MEDIAL_FIRST_RE.findall(text)) + len(
+        _ZAWGYI_VIRAMA_FINAL_RE.findall(text)
+    )
+    if not e_first and not other_order:
+        return False
+    glyphs = len(_ZAWGYI_GLYPH_RE.findall(text))
+    return e_first + other_order + glyphs >= 2 and other_order + glyphs >= 1
 
 
 def _is_script_bearing(c: str) -> bool:
@@ -233,6 +338,7 @@ def script_ratios(text: str) -> tuple[int, float, float]:
 Basis = Literal[
     "posterior",  # confidence is the model's probability
     "mon-exclusive",  # confidence is a hand-chosen constant; a character decided this
+    "zawgyi",  # refused: stored in Zawgyi order, not Unicode; see looks_like_zawgyi
     "other-myanmar-script",  # refused: Shan/Khamti/Karen/Aiton/Palaung, no Mon signal
     "ambiguous-myanmar",  # Myanmar script, too short to separate Mon from Burmese
     "too-short",  # below the length any evidence supports
@@ -268,15 +374,17 @@ class LanguageDetector:
 
     Decision order:
       1. Empty / blank → unknown
-      2. Another Myanmar-script language with no Mon signal → unknown  (see
+      2. Zawgyi-encoded text → unknown  (see looks_like_zawgyi: Zawgyi reuses
+         Mon-exclusive codepoints, so every rule below would misread it)
+      3. Another Myanmar-script language with no Mon signal → unknown  (see
          OTHER_MYANMAR_LANGUAGE_CODEPOINTS: the model has three classes and
          cannot say "none of these", so this branch says it instead)
-      3. Mon-exclusive Unicode chars → mnw  (hard linguistic signal; length-independent)
-      4. Short Myanmar-only text with no Mon-exclusive chars → mnw-mya  (ambiguous, not unknown)
-      5. Too short for non-Myanmar text → unknown
-      6. Neural prediction (fastText)
-      7. Script-ratio analysis (mixed-language labelling)
-      8. Reliability guard
+      4. Mon-exclusive Unicode chars → mnw  (hard linguistic signal; length-independent)
+      5. Short Myanmar-only text with no Mon-exclusive chars → mnw-mya  (ambiguous, not unknown)
+      6. Too short for non-Myanmar text → unknown
+      7. Neural prediction (fastText)
+      8. Script-ratio analysis (mixed-language labelling)
+      9. Reliability guard
 
     Every `Detection` carries a `basis` saying which of these produced it, and
     therefore whether `confidence` is a probability or a constant.
@@ -327,18 +435,27 @@ class LanguageDetector:
         label = f"{side}-eng" if side in ("mnw", "mya") else "mya-eng"
         return label, "posterior", len(fragment) >= MIN_UNAMBIGUOUS_MYANMAR_LEN
 
-    def predict(self, text: str) -> Detection:  # noqa: PLR0911
+    def predict(self, text: str) -> Detection:  # noqa: PLR0911, PLR0912
         """Classify a single text string.
 
-        Seven returns, one per rung of the decision order above. Collapsing them
+        Eight returns, one per rung of the decision order above. Collapsing them
         into a single exit would mean carrying the outcome in mutable locals
         through every branch that cannot apply to it, and the flat form is what
         lets each `return` sit under the comment explaining why that rung exists.
-        `basis` names which one fired.
+        The branch count is over ruff's limit for the same reason. `basis`
+        names which rung fired.
         """
         cleaned = clean_and_normalize(text)
         if not cleaned:
             return Detection("unknown", 0.0, False, "empty")
+
+        # Zawgyi, before any rule reads a codepoint. Zawgyi draws its tall u
+        # with U+1033 and stacks with U+1060, both Mon-exclusive in Unicode, so
+        # the Mon rule below would stamp Burmese `mnw` and `reliable=True`, and
+        # the model agrees with it. Neither can be trusted on text whose
+        # codepoints do not mean what Unicode says they mean.
+        if looks_like_zawgyi(cleaned):
+            return Detection("unknown", 0.0, False, "zawgyi")
 
         has_mon = bool(self._MON_RE.search(cleaned))
 
