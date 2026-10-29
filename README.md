@@ -105,10 +105,12 @@ redistributing the model.
 
 ## Building a model
 
-From a checkout. `data/` and the corpus are not in the repository, so
-`uv run evaluate` reproduces the figures above only after these steps:
+From a checkout, with [uv](https://docs.astral.sh/uv/). `data/` and the corpus
+are not in the repository, so `uv run evaluate` reproduces the figures above
+only after these steps:
 
 ```bash
+make install                                   # dev tools and the wrangle extra
 uv run datasets --explain                      # what the selection keeps and drops
 uv run datasets --corpus-root /path/to/corpus  # link a corpus into datasets/
 uv run pipeline --target-mon 150000 --target-mya 150000 --target-eng 150000
@@ -125,7 +127,7 @@ Targets are 150,000 because Burmese has 46,407 unique lines. More buys
 repetition.
 
 `uv run wrangle` cleans raw files first. `uv run preview` spot-checks a model.
-`make check` runs ruff, mypy and the tests.
+`make check` runs ruff, mypy and the tests, the same gate CI runs.
 
 Changes and the numbers behind each release are in
 [CHANGELOG.md](https://github.com/janakhpon/mon-language-detector/blob/main/CHANGELOG.md).
